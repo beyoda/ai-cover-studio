@@ -1,0 +1,6 @@
+﻿uvr:
+  enabled: true
+  command: "D:\\codex-aivoice\\.venv\\Scripts\\audio-separator {input} --output_dir {output_dir} --model_filename {model_name} --model_file_dir D:\\codex-aivoice\\models\\uvr"
+  model_name: "UVR_MDXNET_Main.onnx"
+  vocal_glob: "*Vocals*.*"
+  instrumental_glob: "*Instrumental*.*"

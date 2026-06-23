@@ -1,0 +1,14 @@
+svc:
+  enabled: true
+  mode: so-vits-svc
+  python: D:\\codex-aivoice\\tools\\so-vits-svc\\workenv\\python.exe
+  project_dir: D:\\codex-aivoice\\tools\\so-vits-svc
+  inference_script: inference_main.py
+  command: '{python} {script} -m {model_path} -c {config_path} -n {input_name} -t
+    {pitch} -s {speaker} -f0p {f0_method} -wf {output_format}'
+  models_dir: D:\\codex-aivoice\\tools\\so-vits-svc\\logs\\44k
+  default_model: G_16000
+  f0_method: rmvpe
+  pitch: 0
+  speaker: output
+  output_format: wav

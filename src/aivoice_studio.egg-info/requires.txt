@@ -1,0 +1,8 @@
+PyQt6>=6.6
+PyYAML>=6.0
+rich>=13.7
+
+[dev]
+pytest>=8.0
+ruff>=0.5
+pyinstaller>=6.6

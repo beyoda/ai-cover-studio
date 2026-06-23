@@ -1,0 +1,7 @@
+﻿mix:
+  ffmpeg_path: "ffmpeg"
+  sample_rate: 44100
+  bitrate: "320k"
+  normalize: true
+  vocal_volume: 1.0
+  instrumental_volume: 0.9
