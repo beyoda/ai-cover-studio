@@ -1,49 +1,70 @@
-﻿# AI Cover Studio v1
+# ♫ AI Cover Studio v1.0
 
-Windows 本地 AI 音乐翻唱工程。目标流程：输入音频 -> 人声分离 -> SVC 换声 -> 混音 -> WAV/MP3 输出。
+**本地 AI 翻唱工具 — 上传歌曲，一键翻唱，无需联网**
 
-## 已完成
+## 这是什么
 
-- 标准 Python src 项目结构
-- UI -> Pipeline -> Modules -> External Tools 分层
-- PyQt6 桌面 UI
-- CLI 调试入口
-- YAML 配置系统
-- 统一日志
-- UVR / SVC / ffmpeg wrapper
-- mock_mode：没有模型和外部工具也能跑通流程
-- PyInstaller 打包脚本
-- pytest 基础测试
+AI Cover Studio 是一个 Windows 本地 AI 翻唱工具。上传任意歌曲，AI 自动完成：人声分离 → 音色转换 → 混音 → 输出翻唱 MP3。全流程约 1 分钟。
 
-## 快速运行
+## 功能
 
-```powershell
-cd D:\codex-aivoice
-powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\run_gui.ps1
+- 🎤 **AI 翻唱**：选择音色模型，上传歌曲，输出翻唱 MP3
+- 🖥 **桌面应用**：PyQt6 深色主题 GUI，拖拽上传
+- 🌐 **网页版**：手机电脑都能用，浏览器访问
+- 🎚 **变调混响**：-12 ~ +12 半音变调，三种混响预设
+- 🎵 **作品库**：自动归档历史作品，内置播放器，歌单管理
+- 📦 **分享导出**：单首导出带封面，发给朋友
+
+## 安装
+
+1. 下载整个项目文件夹（约 12GB，含模型）
+2. 确认已安装 [ffmpeg](https://ffmpeg.org/download.html) 并加入系统 PATH
+3. 双击 `AI Cover Studio.bat` 即可启动
+
+## 使用方式
+
+双击 `AI Cover Studio.bat`，选择模式：
+
+| 选项 | 说明 |
+|------|------|
+| `[1]` 桌面应用 | 打开 GUI 程序，拖歌翻唱 |
+| `[2]` 网页版 | 浏览器打开 `http://127.0.0.1:5000`，手机也能用 |
+| `[3]` 清理缓存 | 删除临时文件 |
+
+### 桌面应用
+
+1. 拖拽歌曲到上传区（或点击选择文件）
+2. 选择音色模型（G_16000 / G_27200）、音高、混响
+3. 点击「生成翻唱」
+4. 完成后播放或打开文件夹
+
+### 网页版
+
+1. 浏览器打开页面
+2. 上传歌曲 → 选模型 → 点生成
+3. 在线播放 + 下载 MP3
+
+## 技术架构
+
+```
+原曲 → UVR(audio-separator) → 人声+伴奏
+        人声 → SVC(so-vits-svc) → AI人声
+        AI人声 + 伴奏 → ffmpeg混音 → cover.mp3
 ```
 
-CLI：
+## 开发
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_cli.ps1 -InputAudio "D:\path\song.wav" -ModelName demo
+# 安装依赖
+pip install -r requirements.txt
+
+# 运行测试
+pytest -q
+
+# 代码检查
+ruff check src/
 ```
 
-## 接入真实工具
+## License
 
-默认 `config/default.yaml` 中 `runtime.mock_mode: true`，先验证工程、UI、日志、打包流程。
-
-接真实处理时：
-
-1. 安装 ffmpeg，或把 ffmpeg.exe 路径写入 `config/mix.yaml`。
-2. 安装 audio-separator/UVR，修改 `config/uvr.yaml` 命令模板。
-3. 放入 so-vits-svc 和模型，修改 `config/svc.yaml`。
-4. 将 `runtime.mock_mode` 改为 `false`。
-
-## 打包
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_exe.ps1
-```
-
-输出在 `dist\AI Cover Studio\`。
+MIT
