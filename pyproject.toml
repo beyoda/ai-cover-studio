@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aivoice-studio"
+version = "0.1.0"
+description = "Windows local AI cover pipeline with PyQt UI"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["PyQt6>=6.6", "PyYAML>=6.0", "rich>=13.7"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.5", "pyinstaller>=6.6"]
+
+[project.scripts]
+aivoice = "aivoice_studio.cli:main"
+aivoice-gui = "aivoice_studio.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+exclude = ["tools", ".venv", "workdir"]

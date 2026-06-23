@@ -1,0 +1,13 @@
+﻿app:
+  name: "AI Cover Studio"
+  version: "0.1.0"
+runtime:
+  mock_mode: false
+  workdir: "workdir"
+  output_dir: "outputs"
+  log_file: "logs/pipeline.log"
+  keep_workdir: true
+  gpu_serial: true
+pipeline:
+  export_mp3: true
+  overwrite: true
