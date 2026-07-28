@@ -17,8 +17,8 @@ jobs/worker.lock
 jobs/_validation_parked/
 !jobs/**/.gitkeep
 cache/
-models/
-tools/
+/models/
+/tools/
 test_songs/
 uploads/
 feishu_uploads/
