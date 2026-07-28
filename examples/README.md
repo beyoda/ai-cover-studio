@@ -6,13 +6,13 @@ These files are meant for **clone + one-click setup**, not for shipping the full
 
 Open on GitHub to hear the example voice:
 
-- **[demo/eason_preview.mp3](demo/eason_preview.mp3)** — short example_voice cover of `audio/sample_input.mp3` (synthetic input, not a commercial song)
+- **[demo/eason_preview.mp3](demo/eason_preview.mp3)** — ~25s clip from a completed example_voice cover of《示例曲目》(technical demo only; not an official release)
 
 Model requirements & training: [docs/MODEL_GUIDE.md](../docs/MODEL_GUIDE.md)
 
 | Path | What |
 |------|------|
-| `demo/eason_preview.mp3` | **Playable showcase** (~480KB, Git LFS) |
+| `demo/eason_preview.mp3` | **Playable showcase** (~25s example_voice clip, Git LFS) |
 | `voices/example_voice/G_27200.pth` | Example SVC checkpoint (Git LFS, ~599MB) |
 | `voices/example_voice/config1.json` | Matching config |
 | `models/uvr/UVR_MDXNET_Main.onnx` | Example UVR model (Git LFS, ~64MB) |

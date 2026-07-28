@@ -10,7 +10,7 @@ AIVOICE 的音色转换层当前绑定 **so-vits-svc 4.x**（本仓默认推理�
 
 - **示例歌手 / example_voice 音色预览**：[`examples/demo/eason_preview.mp3`](../examples/demo/eason_preview.mp3)
 
-（由 `examples/audio/sample_input.mp3` 经 UVR + example_voice SVC 生成的短样例，用于展示链路，非正式发行歌曲。）
+（从本机已完成的 example_voice《示例曲目》翻唱成品中截取约 25 秒，仅供音色展示；非正式发行。）
 
 ---
 

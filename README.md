@@ -25,7 +25,7 @@ git lfs pull
 
 - 代码 + Hermes Skill
 - **示例音色**：示例歌手 / `example_voice`（`examples/voices/example_voice/`，Git LFS）
-- **在线试听**：[`examples/demo/eason_preview.mp3`](examples/demo/eason_preview.mp3)（GitHub 打开即可播放）
+- **在线试听**：[`examples/demo/eason_preview.mp3`](examples/demo/eason_preview.mp3)（约 25 秒真实 example_voice 翻唱片段，GitHub 打开即可播放）
 - **示例 UVR 模型**（`examples/models/uvr/`，Git LFS）
 - **示例测试音频**（`examples/audio/sample_input.mp3`，合成短音，非商业歌曲）
 

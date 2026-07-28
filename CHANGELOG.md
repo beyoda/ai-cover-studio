@@ -26,7 +26,7 @@
 - **升降调 / 混响**：自然语言 pitch（升/降 key）与混响开关
 - **完成通知文案**：含完成时间与耗时
 - **示例资产（Git LFS）**：`examples/voices/example_voice`、`examples/models/uvr`、`examples/audio/sample_input.mp3`
-- **在线试听**：`examples/demo/eason_preview.mp3`（GitHub 可直接播放）
+- **在线试听**：`examples/demo/eason_preview.mp3`（约 25s 真实 example_voice《示例曲目》翻唱片段，GitHub 可直接播放）
 - **模型说明**：`docs/MODEL_GUIDE.md`（可用模型条件 + so-vits-svc 训练概要）
 - **免责声明**：`docs/DISCLAIMER.md`（示例音色 / 歌曲版权 / 训练 / 无担保等详细条款）
 - **一键安装**：`scripts/setup_tools.ps1`（装示例模型 / 准备 so-vits-svc 源码 / 写配置路径）
