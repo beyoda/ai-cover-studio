@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aivoice.local/schemas/cover_api.schema.json",
+  "title": "AI Cover Studio Cover API",
+  "description": "DTO contracts for Cover Skill → Cover Service → Pipeline Adapter. Phase-1 interface freeze.",
+  "$defs": {
+    "ReverbPreset": {
+      "type": "string",
+      "enum": ["关闭", "录音棚", "现场", "大教堂"]
+    },
+    "CoverClient": {
+      "type": "string",
+      "enum": ["hermes", "gui", "cli", "api", "test", "unknown"]
+    },
+    "JobStatus": {
+      "type": "string",
+      "enum": ["queued", "running", "succeeded", "failed", "cancelled"]
+    },
+    "PipelineStage": {
+      "type": "string",
+      "enum": ["pending", "uvr", "svc", "mixing", "exporting", "done", "failed"]
+    },
+    "CoverRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_audio", "model_name"],
+      "properties": {
+        "input_audio": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute local audio path"
+        },
+        "model_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "SVC checkpoint stem, e.g. G_16000"
+        },
+        "pitch": {
+          "type": "integer",
+          "minimum": -12,
+          "maximum": 12,
+          "default": 0
+        },
+        "reverb": {
+          "$ref": "#/$defs/ReverbPreset",
+          "default": "关闭"
+        },
+        "f0_method": {
+          "type": "string",
+          "default": "rmvpe"
+        },
+        "export_mp3": {
+          "type": "boolean",
+          "default": true
+        },
+        "accompaniment": {
+          "type": "string",
+          "default": "",
+          "description": "Optional instrumental path; empty = use UVR instrumental"
+        },
+        "workdir": {
+          "type": ["string", "null"],
+          "description": "Optional; default from config runtime.workdir"
+        },
+        "output_dir": {
+          "type": ["string", "null"],
+          "description": "Optional; default from config runtime.output_dir"
+        },
+        "client": {
+          "$ref": "#/$defs/CoverClient",
+          "default": "unknown"
+        },
+        "request_id": {
+          "type": ["string", "null"],
+          "description": "Optional idempotency key"
+        }
+      }
+    },
+    "CoverProgressEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["job_id", "stage", "percent", "message"],
+      "properties": {
+        "job_id": { "type": "string" },
+        "stage": { "$ref": "#/$defs/PipelineStage" },
+        "percent": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "message": { "type": "string" },
+        "elapsed_s": { "type": ["number", "null"] }
+      }
+    },
+    "CoverResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["success", "job_id"],
+      "properties": {
+        "success": { "type": "boolean" },
+        "job_id": { "type": "string" },
+        "wav_path": { "type": ["string", "null"] },
+        "mp3_path": { "type": ["string", "null"] },
+        "error": { "type": ["string", "null"] },
+        "model_name": { "type": ["string", "null"] },
+        "pitch": { "type": ["integer", "null"] },
+        "reverb": { "type": ["string", "null"] },
+        "stages_timing": {
+          "type": ["object", "null"],
+          "additionalProperties": { "type": "number" },
+          "description": "Optional seconds per stage; filled when profiling attached"
+        }
+      }
+    },
+    "CoverJob": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["job_id", "status", "request", "created_at"],
+      "properties": {
+        "job_id": { "type": "string" },
+        "status": { "$ref": "#/$defs/JobStatus" },
+        "request": { "$ref": "#/$defs/CoverRequest" },
+        "progress": { "anyOf": [{ "$ref": "#/$defs/CoverProgressEvent" }, { "type": "null" }] },
+        "result": { "anyOf": [{ "$ref": "#/$defs/CoverResult" }, { "type": "null" }] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "started_at": { "type": ["string", "null"], "format": "date-time" },
+        "finished_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "HealthResponse": {
+      "type": "object",
+      "required": ["ok"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "service": { "type": "string", "const": "aivoice-cover" },
+        "version": { "type": "string" },
+        "pipeline_reachable": { "type": "boolean" },
+        "uvr_worker": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "loaded": { "type": "boolean" },
+            "model": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "ModelsResponse": {
+      "type": "object",
+      "required": ["models"],
+      "properties": {
+        "models": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "default_model": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

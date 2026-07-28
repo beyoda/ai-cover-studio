@@ -1,0 +1,126 @@
+openapi: 3.0.3
+info:
+  title: AI Cover Studio — Cover Service API
+  version: 0.1.0-design
+  description: |
+    Phase-1 interface draft. Implementation must call the existing Pipeline
+    only through Pipeline Adapter. GUI continues to use build_pipeline directly.
+servers:
+  - url: http://127.0.0.1:17890
+    description: Local Cover Service (default)
+paths:
+  /v1/health:
+    get:
+      operationId: health
+      summary: Liveness / readiness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "./cover_api.schema.json#/$defs/HealthResponse"
+
+  /v1/cover/models:
+    get:
+      operationId: listModels
+      summary: List available SVC model names
+      responses:
+        "200":
+          description: Model list
+          content:
+            application/json:
+              schema:
+                $ref: "./cover_api.schema.json#/$defs/ModelsResponse"
+
+  /v1/cover/run:
+    post:
+      operationId: runCoverSync
+      summary: Run one cover job synchronously (Hermes preferred)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./cover_api.schema.json#/$defs/CoverRequest"
+      responses:
+        "200":
+          description: Finished (success or pipeline-level failure in body)
+          content:
+            application/json:
+              schema:
+                $ref: "./cover_api.schema.json#/$defs/CoverResult"
+        "400":
+          description: Invalid request
+        "503":
+          description: Service unavailable / adapter cannot start pipeline
+
+  /v1/cover/jobs:
+    post:
+      operationId: createCoverJob
+      summary: Create a cover job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request]
+              properties:
+                request:
+                  $ref: "./cover_api.schema.json#/$defs/CoverRequest"
+                wait:
+                  type: boolean
+                  default: false
+                  description: If true, block until terminal state and return CoverJob with result
+      responses:
+        "201":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "./cover_api.schema.json#/$defs/CoverJob"
+        "200":
+          description: Job finished (only when wait=true)
+          content:
+            application/json:
+              schema:
+                $ref: "./cover_api.schema.json#/$defs/CoverJob"
+
+  /v1/cover/jobs/{job_id}:
+    get:
+      operationId: getCoverJob
+      summary: Get job snapshot
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "./cover_api.schema.json#/$defs/CoverJob"
+        "404":
+          description: Unknown job
+
+  /v1/cover/jobs/{job_id}/events:
+    get:
+      operationId: streamCoverEvents
+      summary: Optional SSE progress stream
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: text/event-stream of CoverProgressEvent
+          content:
+            text/event-stream:
+              schema:
+                $ref: "./cover_api.schema.json#/$defs/CoverProgressEvent"

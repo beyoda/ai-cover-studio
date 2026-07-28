@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "models_dir": "tools/so-vits-svc/logs/44k",
+  "default_voice_id": "example_voice",
+  "voices": {
+    "example_voice": {
+      "display_name": "示例歌手",
+      "description": "男声流行音色",
+      "checkpoint": "G_27200.pth",
+      "config": "config1.json",
+      "enabled": true,
+      "metadata": {
+        "language": "zh",
+        "style": "pop"
+      },
+      "aliases": ["G_27200", "example_voice", "ExampleVoice", "示例歌手", "示例歌手"]
+    },
+    "example_voice_b": {
+      "display_name": "ExampleVoiceB",
+      "description": "ExampleVoiceB音色",
+      "checkpoint": "G_16000.pth",
+      "config": "configcos.json",
+      "enabled": true,
+      "metadata": {
+        "language": "zh",
+        "style": "pop",
+        "notes": "G_16000 + configcos.json (vec768l12)"
+      },
+      "aliases": ["G_16000", "example_voice_b", "ExampleVoiceB", "coa", "COA", "EXAMPLE_VOICE_B"]
+    }
+  }
+}

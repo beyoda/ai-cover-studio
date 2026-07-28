@@ -13,8 +13,8 @@ from PyQt6.QtWidgets import (
     QTabBar, QTextEdit, QVBoxLayout, QWidget,
 )
 
-from aivoice_studio.core.context import JobContext
-from aivoice_studio.factory import build_pipeline
+from aivoice_studio.cover.service.cover_service import CoverService
+from aivoice_studio.ui.cover_bridge import apply_stage_elapsed, worker_params_to_cover_request
 from aivoice_studio.ui.history_store import HistoryStore
 from aivoice_studio.ui.library_scanner import LibraryScanner
 from aivoice_studio.ui.library_page import LibraryPage
@@ -24,7 +24,6 @@ from aivoice_studio.ui.theme import (
     TEXT, TEXT_DIM, TEXT_SEC,
 )
 from aivoice_studio.utils.config import ConfigLoader
-from aivoice_studio.utils.paths import resolve_path
 
 
 class PipelineWorker(QThread):
@@ -47,29 +46,27 @@ class PipelineWorker(QThread):
         self._t0 = time.time()
         self._stage_t0 = self._t0
 
-        def cb(state, pct: int, msg: str) -> None:
-            stage = state.value if hasattr(state, "value") else str(state)
-            now = time.time()
-            if stage != self._last_stage:
-                self._stage_t0 = now
-                self._last_stage = stage
-            elapsed = now - self._stage_t0
+        def on_progress(event) -> None:
+            stage, pct, msg, elapsed, self._last_stage, self._stage_t0 = apply_stage_elapsed(
+                event,
+                last_stage=self._last_stage,
+                stage_t0=self._stage_t0,
+                now=time.time(),
+            )
             self.progress.emit(stage, pct, msg, elapsed)
 
         try:
-            pipeline, config = build_pipeline(cb)
-            rt = config.get("runtime", {})
-            result = pipeline.run(JobContext(
+            config = ConfigLoader().load()
+            request = worker_params_to_cover_request(
                 input_audio=self.input_audio,
                 model_name=self.model_name,
                 pitch=self.pitch,
-                f0_method=config.get("svc", {}).get("f0_method", "rmvpe"),
-                workdir=resolve_path(rt.get("workdir", "workdir")),
-                output_dir=resolve_path(rt.get("output_dir", "outputs")),
-                export_mp3=bool(config.get("pipeline", {}).get("export_mp3", True)),
-                accompaniment=self.accompaniment,
                 reverb=self.reverb,
-            ))
+                accompaniment=self.accompaniment,
+                f0_method=config.get("svc", {}).get("f0_method", "rmvpe"),
+                export_mp3=bool(config.get("pipeline", {}).get("export_mp3", True)),
+            )
+            result = CoverService().run(request, on_progress=on_progress)
             if result.success:
                 self.done.emit(str(result.wav_path or ""), str(result.mp3_path or ""))
             else:

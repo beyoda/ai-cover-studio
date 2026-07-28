@@ -1,4 +1,4 @@
-﻿.venv/
+.venv/
 __pycache__/
 *.py[cod]
 *.spec
@@ -7,6 +7,16 @@ dist/
 logs/
 workdir/
 outputs/
+jobs/queued/*.json
+jobs/running/*.json
+jobs/completed/*.json
+jobs/failed/*.json
+jobs/cancelled/*.json
+jobs/outbox/*
+jobs/worker.lock
+jobs/_validation_parked/
+!jobs/**/.gitkeep
+cache/
 models/
 tools/
 test_songs/
@@ -20,3 +30,12 @@ window_geo.txt
 history.json
 .claude/
 .env
+*.log
+commands.log
+metrics.csv
+profiling.json
+.profiling_done
+cover_request.json
+p4_real_cover_result.json
+hermes_skill/runtime/sessions/
+hermes_skill/**/__pycache__/

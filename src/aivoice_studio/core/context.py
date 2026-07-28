@@ -1,4 +1,4 @@
-﻿from dataclasses import dataclass, field
+from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import uuid4
 
@@ -15,6 +15,10 @@ class JobContext:
     accompaniment: str = ""
     reverb: str = "关闭"
     job_id: str = field(default_factory=lambda: uuid4().hex[:12])
+    # Optional UVR cache short-circuit (CoverService / Adapter). Inference unchanged.
+    skip_uvr: bool = False
+    cached_vocal: str = ""
+    cached_instrumental: str = ""
 
     @property
     def job_workdir(self) -> Path:

@@ -1,0 +1,15 @@
+# Runtime job queue (v1.3). Keep directory tree; ignore job payloads.
+*
+!.gitignore
+!queued/
+!running/
+!completed/
+!failed/
+!cancelled/
+!outbox/
+!queued/.gitkeep
+!running/.gitkeep
+!completed/.gitkeep
+!failed/.gitkeep
+!cancelled/.gitkeep
+!outbox/.gitkeep
