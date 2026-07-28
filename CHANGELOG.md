@@ -25,6 +25,8 @@
 - **投递目标推断**：`--session-id` 的 `ou_`/`oc_`，或从 Gateway 日志回填
 - **升降调 / 混响**：自然语言 pitch（升/降 key）与混响开关
 - **完成通知文案**：含完成时间与耗时
+- **示例资产（Git LFS）**：`examples/voices/example_voice`、`examples/models/uvr`、`examples/audio/sample_input.mp3`
+- **一键安装**：`scripts/setup_tools.ps1`（装示例模型 / 准备 so-vits-svc 源码 / 写配置路径）
 - **GUI 路径保留**：桌面端仍可经 CoverService 使用
 
 ### Performance (实测量级)
