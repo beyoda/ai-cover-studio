@@ -25,10 +25,13 @@ git lfs pull
 
 - 代码 + Hermes Skill
 - **示例音色**：示例歌手 / `example_voice`（`examples/voices/example_voice/`，Git LFS）
+- **在线试听**：[`examples/demo/eason_preview.mp3`](examples/demo/eason_preview.mp3)（GitHub 打开即可播放）
 - **示例 UVR 模型**（`examples/models/uvr/`，Git LFS）
 - **示例测试音频**（`examples/audio/sample_input.mp3`，合成短音，非商业歌曲）
 
 仓库**不含**：完整 `tools/so-vits-svc/workenv`（约 5GB CUDA 环境）。用一键脚本安装/拷贝。
+
+**什么样的模型能用 / 怎么训练**：见 [docs/MODEL_GUIDE.md](docs/MODEL_GUIDE.md)。
 
 ---
 
@@ -124,7 +127,9 @@ $env:PYTHONPATH="src"
 
 | 路径 | 作用 |
 |------|------|
+| `examples/demo/eason_preview.mp3` | **example_voice 在线试听预览** |
 | `examples/` | 示例音色 / UVR / 测试 MP3（见 [examples/README.md](examples/README.md)） |
+| `docs/MODEL_GUIDE.md` | 可用模型条件 + 训练流程 |
 | `scripts/setup_tools.ps1` | 一键安装到运行目录 |
 | `hermes_skill/media/aivoice-cover/` | 飞书 Skill |
 | `src/aivoice_studio/worker/` | 任务 Worker |

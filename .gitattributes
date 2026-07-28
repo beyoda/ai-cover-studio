@@ -1,3 +1,4 @@
 examples/voices/**/*.pth filter=lfs diff=lfs merge=lfs -text
 examples/models/**/*.onnx filter=lfs diff=lfs merge=lfs -text
 examples/audio/**/*.mp3 filter=lfs diff=lfs merge=lfs -text
+examples/demo/*.mp3 filter=lfs diff=lfs merge=lfs -text
