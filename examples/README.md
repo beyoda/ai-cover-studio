@@ -20,9 +20,12 @@ Model requirements & training: [docs/MODEL_GUIDE.md](../docs/MODEL_GUIDE.md)
 
 ## Disclaimer
 
-- The `example_voice` checkpoint and preview are provided **only as a technical example** for personal / research wiring of AIVOICE.
-- Do **not** use voice models or song covers for commercial distribution without proper rights.
-- Replace example assets with voices/songs you are allowed to use.
+**Full text (Chinese):** [docs/DISCLAIMER.md](../docs/DISCLAIMER.md)
+
+- The `example_voice` checkpoint and `demo/eason_preview.mp3` are **technical demos only** (pipeline wiring). They are **not** an official license, endorsement, or commercial voice pack.
+- Do **not** use example voices or song covers for commercial distribution, ads, or misleading “official voice” claims without proper rights.
+- Song search / cover / redistribution compliance is **your** responsibility.
+- Replace example assets with voices and audio you are allowed to use. If you disagree, stop using the repo and delete the example models.
 
 ## Install into runtime paths
 

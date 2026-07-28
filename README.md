@@ -130,6 +130,7 @@ $env:PYTHONPATH="src"
 | `examples/demo/eason_preview.mp3` | **example_voice 在线试听预览** |
 | `examples/` | 示例音色 / UVR / 测试 MP3（见 [examples/README.md](examples/README.md)） |
 | `docs/MODEL_GUIDE.md` | 可用模型条件 + 训练流程 |
+| `docs/DISCLAIMER.md` | 详细免责声明（音色 / 歌曲 / 训练 / 责任） |
 | `scripts/setup_tools.ps1` | 一键安装到运行目录 |
 | `hermes_skill/media/aivoice-cover/` | 飞书 Skill |
 | `src/aivoice_studio/worker/` | 任务 Worker |
@@ -142,11 +143,19 @@ $env:PYTHONPATH="src"
 
 ## 7. 免责声明
 
-示例 `example_voice` 音色仅用于打通技术链路的个人/研究用途。  
-请勿在未获授权时将他人音色或歌曲用于商业传播。请替换为你有权使用的资产。
+**完整条款**：[docs/DISCLAIMER.md](docs/DISCLAIMER.md)（请使用前阅读）。要点如下：
+
+1. **软件定位**：个人学习 / 技术研究 / 自用演示工具；**不是**已获商用授权的发行平台。  
+2. **代码许可**：本仓库代码为 **MIT**；**不覆盖**第三方模型、歌曲、艺人声音与形象等权利。  
+3. **示例音色（示例歌手 / example_voice）及预览 MP3**：仅用于证明 UVR→SVC→导出链路可跑通；**不代表**官方授权或合作；**禁止**商用、广告、公开伪冒「正版音色」及违法用途。请尽快替换为你有权使用的音色。  
+4. **歌曲版权**：在线搜歌 / 翻唱 / 传播的合规责任在**使用者**；未经许可勿公开分发翻唱成品。`examples/audio/sample_input.mp3` 为合成测试音，非商业歌曲。  
+5. **训练模型**：须使用你有权的干声数据；自训模型与成品分发的法律责任自负。  
+6. **无担保**：软件按「现状」提供；作者不对版权纠纷、账号封禁、硬件兼容或生成质量负责。
+
+不同意上述内容请勿使用本仓库，并删除已下载的示例模型与预览文件。
 
 ---
 
 ## License
 
-MIT（第三方模型/歌曲版权归原权利人，不因本仓库 MIT 而改变）
+MIT（仅限本仓库软件代码）。第三方模型 / 歌曲 / 音色等权利归原权利人，详见 [docs/DISCLAIMER.md](docs/DISCLAIMER.md)。
