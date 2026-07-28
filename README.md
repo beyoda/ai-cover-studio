@@ -25,13 +25,13 @@ git lfs pull
 
 - 代码 + Hermes Skill
 - **示例音色**：示例歌手 / `example_voice`（`examples/voices/example_voice/`，Git LFS）
-- **在线试听**：[`examples/demo/eason_preview.mp3`](examples/demo/eason_preview.mp3)（约 25 秒真实 example_voice 翻唱片段，GitHub 打开即可播放）
+- **在线试听（约 25 秒）**：打开 → [examples/demo/eason_preview.mp3](https://github.com/beyoda/ai-cover-studio/blob/main/examples/demo/eason_preview.mp3)（example_voice《示例曲目》翻唱片段，**不是** 12 秒测试音）
 - **示例 UVR 模型**（`examples/models/uvr/`，Git LFS）
-- **示例测试音频**（`examples/audio/sample_input.mp3`，合成短音，非商业歌曲）
 
 仓库**不含**：完整 `tools/so-vits-svc/workenv`（约 5GB CUDA 环境）。用一键脚本安装/拷贝。
 
 **什么样的模型能用 / 怎么训练**：见 [docs/MODEL_GUIDE.md](docs/MODEL_GUIDE.md)。
+**免责声明**：见 [docs/DISCLAIMER.md](docs/DISCLAIMER.md)。
 
 ---
 
@@ -79,18 +79,10 @@ hermes gateway run
 有多版本时回复序号，例如 `1`。  
 先收到「已入队」，大约 1 分钟后收到完成通知 + `cover.mp3`。
 
-### 本地文件示例（合成测试音）
-
-把路径发给 Skill / 或在 GUI 里打开：
+试听成品音色（展示用，非输入文件）：
 
 ```text
-examples/audio/sample_input.mp3
-```
-
-自然语言示例：
-
-```text
-用 example_voice 翻唱 examples/audio/sample_input.mp3
+https://github.com/beyoda/ai-cover-studio/blob/main/examples/demo/eason_preview.mp3
 ```
 
 ---
@@ -148,7 +140,7 @@ $env:PYTHONPATH="src"
 1. **软件定位**：个人学习 / 技术研究 / 自用演示工具；**不是**已获商用授权的发行平台。  
 2. **代码许可**：本仓库代码为 **MIT**；**不覆盖**第三方模型、歌曲、艺人声音与形象等权利。  
 3. **示例音色（示例歌手 / example_voice）及预览 MP3**：仅用于证明 UVR→SVC→导出链路可跑通；**不代表**官方授权或合作；**禁止**商用、广告、公开伪冒「正版音色」及违法用途。请尽快替换为你有权使用的音色。  
-4. **歌曲版权**：在线搜歌 / 翻唱 / 传播的合规责任在**使用者**；未经许可勿公开分发翻唱成品。`examples/audio/sample_input.mp3` 为合成测试音，非商业歌曲。  
+4. **歌曲版权**：在线搜歌 / 翻唱 / 传播的合规责任在**使用者**；未经许可勿公开分发翻唱成品。在线试听预览仅为技术展示片段。  
 5. **训练模型**：须使用你有权的干声数据；自训模型与成品分发的法律责任自负。  
 6. **无担保**：软件按「现状」提供；作者不对版权纠纷、账号封禁、硬件兼容或生成质量负责。
 

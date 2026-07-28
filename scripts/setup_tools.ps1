@@ -25,7 +25,7 @@ try {
 
 $easonPth = Join-Path $Root "examples\voices\example_voice\G_27200.pth"
 $uvrOnnx = Join-Path $Root "examples\models\uvr\UVR_MDXNET_Main.onnx"
-$sampleMp3 = Join-Path $Root "examples\audio\sample_input.mp3"
+$demoMp3 = Join-Path $Root "examples\demo\eason_preview.mp3"
 if (-not (Test-Path $easonPth)) { throw "Missing $easonPth — run: git lfs pull" }
 if (-not (Test-Path $uvrOnnx)) { throw "Missing $uvrOnnx — run: git lfs pull" }
 
@@ -90,10 +90,8 @@ svc:
 
 Write-Host "`n== Done =="
 Write-Host "Example voice : example_voice (示例歌手) / G_27200.pth"
-Write-Host "Sample audio  : $sampleMp3"
+Write-Host "Listen demo   : $demoMp3  (~25s, not a pipeline input)"
 Write-Host "Next:"
 Write-Host "  1) Ensure ffmpeg in PATH"
-Write-Host "  2) .\scripts\setup_tools.ps1   (this script)"
-Write-Host "  3) hermes gateway run"
-Write-Host "  4) Feishu: 用示例歌手声音翻唱 examples 里的歌名，或本地:"
-Write-Host "     用 example_voice 翻唱 examples/audio/sample_input.mp3"
+Write-Host "  2) hermes gateway run"
+Write-Host "  3) Feishu: 用示例歌手声音翻唱晴天"
