@@ -113,3 +113,20 @@ declared.
 - 真实 GPU 全链路（UVR → SVC → 混音）在本轮环境中没有可用的运行时与授权素材，状态为**未验证**；仓库内的验证脚本对该阶段明确标记 `SKIP`。
 - 缺少可公开的运行时界面截图。
 - 推送到 GitHub 需要凭据，当前环境没有可用凭据（未推送）。
+
+## Update — 2026-09-17 (post-publication)
+
+The preceding "Remaining (not in this round)" block was written at the end of the in-repo preparation round and reflects that snapshot only. As of **2026-09-17**, verified against the public GitHub API:
+
+- `main` HEAD has been force-pushed to `482056000cb6500075f1f6e63980355b10279abe`.
+- The `v1.0.0` tag's object is `cb129e49279598da177fd7c3e266c28d96de69ff`. The tag labels the same freeze described under `[0.1.0]` above as an *internal* milestone and points to code version `0.1.0`; it is not a separate published release.
+- Old commits that held private paths, personal voice ids, or artist-specific references have been replaced in the published history. A complete replacement of all in-tree content was verified against the 213 tracked files at the current HEAD.
+
+This commit is a documentation-only follow-up: it adjusts `README.md` and `CHANGELOG.md` to match the public state above. It does **not** rewrite history, does **not** move or re-tag the `v1.0.0` tag, and does **not** access the orphaned LFS objects.
+
+Still open and **not** addressed in this round:
+
+- GitHub Support ticket **#4767216** — server-side cleanup of remaining reachable old commit blobs and the four orphaned LFS objects (including a private training voice model) has not been confirmed on the GitHub side. Resolution depends on GitHub Support, and is out of scope for this documentation update.
+
+The "真实 GPU 全链路未验证" and "缺少运行时界面截图" items above continue to be true after 2026-09-17 and remain placeholders for the maintainer's own validation, **not** claims about this published code.
+

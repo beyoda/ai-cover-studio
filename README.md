@@ -28,6 +28,7 @@ Outbox / notifier -> finished audio
 ## Current Status
 
 The package version is `0.1.0` (see [`pyproject.toml`](pyproject.toml)); this repository is **pre-1.0 and not a stable release**. The maintainer has exercised the local GPU pipeline and the async delivery path end to end on Windows, but the public repository is still being prepared for broader open-source reproducibility, and no release is being declared until that work is finished.
+A `v1.0.0` git tag exists alongside the current history; it points to the same code as the `[0.1.0]` entry in [`CHANGELOG.md`](CHANGELOG.md), where it is documented as an *internal* milestone marker rather than a separate published release. There is no `1.x` release track on top of `0.1.0`.
 
 Known publication constraints:
 
