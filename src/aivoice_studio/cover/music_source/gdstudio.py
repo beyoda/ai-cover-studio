@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import urllib.error
 import urllib.parse
@@ -28,14 +29,48 @@ _UA = {
     "User-Agent": "AIVOICE-MusicSource/1.0 (+https://music.gdstudio.xyz attribution)",
     "Referer": "https://music.gdstudio.xyz/",
 }
-# GD / 网易云艺人名常与口语不一致；别名只用于扩写搜索与排序。
-_ARTIST_ALIASES: dict[str, list[str]] = {
-    "示例歌手": ["ExampleArtist", "ExampleArtist T", "ExampleArtist"],
-    "示例歌手": ["ExampleVoice Chan", "ExampleVoice", "example_voice"],
-}
+# Search aliases are *lookup hints only*: they widen the query sent to the
+# upstream search API and nudge ranking. They never pick a voice and never
+# bypass licensing. Ship no built-in table; users extend it locally through
+# ``config/artist_aliases.json`` (see the template in this repository).
+ARTIST_ALIASES_ENV_VAR = "AIVOICE_ARTIST_ALIASES"
 _SPLIT_ARTIST_SONG = re.compile(
     r"^(?P<a>.+?)\s*(?:[-–—－]|的)\s*(?P<b>.+)$"
 )
+
+
+def artist_aliases_path() -> Path:
+    override = (os.environ.get(ARTIST_ALIASES_ENV_VAR) or "").strip()
+    if override:
+        return Path(override)
+    return project_root() / "config" / "artist_aliases.json"
+
+
+def load_artist_aliases() -> dict[str, list[str]]:
+    """Optional local artist-name aliases for search expansion.
+
+    Returns an empty mapping when the file is absent or malformed, so a fresh
+    clone behaves exactly like a user who never needed aliases.
+    """
+    path = artist_aliases_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    raw = data.get("aliases") if isinstance(data, dict) else None
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, list[str]] = {}
+    for key, values in raw.items():
+        if not isinstance(values, list):
+            continue
+        name = str(key).strip()
+        aliases = [str(v).strip() for v in values if str(v).strip()]
+        if name and aliases:
+            out[name] = aliases
+    return out
 
 
 def normalize_song_query(query: str) -> str:
@@ -50,8 +85,11 @@ def normalize_song_query(query: str) -> str:
     return raw.strip()
 
 
-def expand_search_queries(query: str) -> list[str]:
-    """Generate GD search variants for spoken titles like「示例歌手 - 示例曲目」."""
+def expand_search_queries(
+    query: str, *, aliases: dict[str, list[str]] | None = None
+) -> list[str]:
+    """Generate search variants for spoken titles like「<artist> - <song>」."""
+    table = load_artist_aliases() if aliases is None else aliases
     raw = normalize_song_query(query)
     out: list[str] = []
 
@@ -69,25 +107,31 @@ def expand_search_queries(query: str) -> list[str]:
         add(f"{artist} {song}")
         add(song)
         add(artist)
-        for alias in _ARTIST_ALIASES.get(artist, []):
+        for alias in table.get(artist, []):
             add(f"{alias} {song}")
             add(alias)
     else:
-        for name, aliases in _ARTIST_ALIASES.items():
+        for name, aliases_for_name in table.items():
             if name in raw:
                 rest = raw.replace(name, " ").strip()
                 add(rest)
-                for alias in aliases:
+                for alias in aliases_for_name:
                     add(f"{alias} {rest}".strip())
                     add(alias)
     return out
 
 
-def _rank_candidates(query: str, rows: list[SongCandidate]) -> list[SongCandidate]:
+def _rank_candidates(
+    query: str,
+    rows: list[SongCandidate],
+    *,
+    aliases: dict[str, list[str]] | None = None,
+) -> list[SongCandidate]:
+    table = load_artist_aliases() if aliases is None else aliases
     tokens = [t for t in re.split(r"[\s\-–—－的]+", query) if t]
     alias_hits: set[str] = set()
     for t in tokens:
-        for a in _ARTIST_ALIASES.get(t, []):
+        for a in table.get(t, []):
             alias_hits.add(a.lower())
         alias_hits.add(t.lower())
 

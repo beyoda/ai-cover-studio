@@ -1,13 +1,13 @@
 ---
 name: aivoice-cover
 description: "Use when the user wants a local AI vocal cover / 翻唱 / 换声, or asks which voices are available (有哪些声音). Resolve voice_id via Registry and music via MusicSource (local path, direct URL, or GD音乐台 search+pick); enqueue a FS job via aivoice_cover.py (status=queued). Always pass --session-id (Feishu oc_ chat or ou_ user id). Do not invent voice lists. Do not wait for completed or send mp3 in the same turn."
-version: 1.3.0.4.2-ondemand
+version: 1.3.0.5-ondemand
 author: AIVOICE
 license: MIT
 platforms: [windows]
 metadata:
   hermes:
-    tags: [aivoice, cover, svc, vocal, 翻唱, 换声, 示例歌手, example_voice, example_voice_b, 音色, 声音列表]
+    tags: [aivoice, cover, svc, vocal, 翻唱, 换声, 音色, 声音列表]
     category: media
     related_skills: []
     requires_toolsets: [terminal]
@@ -34,15 +34,24 @@ Worker 负责（按需拉起，非本 Skill 同步等待）：
 ```
 
 Never hardcode checkpoints. Never call UVR/SVC CLIs. Never grep the repo for covers.  
-**ExampleVoiceB 可用，禁止警告 768/256，禁止劝换 example_voice。**
+**音色一律来自 Voice Registry：不要警告某个音色「容易失败」，也不要劝用户换音色。**
 
 Attribution: **GD音乐台 (music.gdstudio.xyz)**.
+
+### Where the script lives
+
+Replace `<repo-root>` below with the directory you cloned this repository into — the
+folder that contains `pyproject.toml` and `hermes_skill/`. The script resolves the
+repository from its own location, so no absolute path is stored in this file.
 
 Python（务必 unset PYTHONPATH）：
 
 ```text
 bash -lc "unset PYTHONPATH; exec <repo-root>/.venv/Scripts/python.exe <repo-root>/hermes_skill/media/aivoice-cover/scripts/aivoice_cover.py ..."
 ```
+
+> If `.venv` is not present, use any Python 3.10+ interpreter that can import this
+> repository's `src/` tree (the script adds it to `sys.path` itself).
 
 ### Session / 投递目标（必读）
 
@@ -70,15 +79,16 @@ Notifier 会按前缀发送：`oc_` → chat_id，`ou_` → open_id。
 10. **禁止**假设当前 tool 调用可以发送最终 mp3。
 11. **`queued` 是成功状态，不是失败。** 向用户说明已入队即可；成品稍后自动推送。
 12. **每次调用都带同一 `--session-id`**（飞书 `ou_…` 或 `oc_…`），以便自动推送成品。
+13. **音色列表只能来自 `--list-voices`**（即 Voice Registry）。禁止手写、禁止记忆化音色名。
 
 ---
 
 ## Flow A — 搜歌选曲翻唱
 
-用户：「用 example_voice_b 翻唱示例歌手的示例曲目」
+用户：「用 <voice_id> 翻唱<歌名>」
 
 ```text
-.../aivoice_cover.py --session-id <SID> --voice-id example_voice_b --search 示例歌手的示例曲目
+.../aivoice_cover.py --session-id <SID> --voice-id <voice_id> --search <歌名>
 ```
 
 exit 2 + `pretty` → **原样发出，停住等用户选序号**。
@@ -104,11 +114,11 @@ exit 2 + `pretty` → **原样发出，停住等用户选序号**。
 ## Flow B — 本地 / 直链
 
 ```json
-{ "input": "示例歌手 - 示例曲目.mp3", "voice_id": "example_voice" }
+{ "input": "C:/path/to/your-authorized-track.mp3", "voice_id": "<voice_id>" }
 ```
 
 ```json
-{ "source": "https://....mp3", "voice_id": "example_voice_b" }
+{ "source": "https://example.com/your-authorized-track.mp3", "voice_id": "<voice_id>" }
 ```
 
 ```text
@@ -116,6 +126,9 @@ exit 2 + `pretty` → **原样发出，停住等用户选序号**。
 ```
 
 成功同样是 `status=queued`；本轮结束，不发 mp3。
+
+`voice_id` 必须是 Voice Registry 里已启用的 id；同目录的 `example_request.json` 是
+可复制的请求骨架（`_readme` 与占位值需替换后才可运行）。
 
 ---
 
@@ -132,10 +145,38 @@ exit 2 + `pretty` → **原样发出，停住等用户选序号**。
 ## NL 解析（可选）
 
 ```text
-.../aivoice_cover.py --session-id <SID> --parse "用example_voice_b翻唱示例歌手的示例曲目"
+.../aivoice_cover.py --session-id <SID> --parse "用<voice_id>翻唱<歌名>"
 ```
 
 返回 `params.action=search|pick|cover` 等。pitch：「升两个key」→ 2。
+
+---
+
+## Examples
+
+搜歌 → 选曲 → 入队（`--voice-id` 与输出中的 `voice` 都来自 Registry）：
+
+```text
+.../aivoice_cover.py --session-id ou_xxxxxxxx --voice-id <voice_id> --search <歌名>
+.../aivoice_cover.py --session-id ou_xxxxxxxx --pick 1
+```
+
+本地文件 / 直链请求体（可复制 `<skill-dir>/example_request.json`，替换占位值）：
+
+```json
+{
+  "input": "C:/path/to/your-authorized-track.mp3",
+  "voice_id": "<voice_id>",
+  "pitch": 0,
+  "options": { "reverb": "关闭", "export_mp3": true }
+}
+```
+
+查看当前注册的音色：
+
+```text
+.../aivoice_cover.py --list-voices
+```
 
 ---
 
@@ -153,9 +194,9 @@ exit 2 + `pretty` → **原样发出，停住等用户选序号**。
 ```json
 {
   "status": "queued",
-  "job_id": "a55442027dba",
-  "song": "示例曲目",
-  "voice": "ExampleVoiceB",
+  "job_id": "<job_id>",
+  "song": "<song>",
+  "voice": "<voice display name>",
   "pitch": 0,
   "output_path": null,
   "feishu_chat_id": "ou_or_oc_from_session",

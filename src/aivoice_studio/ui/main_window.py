@@ -208,8 +208,10 @@ class MainWindow(QMainWindow):
         svc = cfg.get("svc", {})
         self._model_map = ModelConfigMap(svc.get("models_dir", "models"))
         self._models = self._model_map.list_models()
+        # No checkpoint ships with the repository, so a fresh clone legitimately
+        # has no default model. Never invent one here.
         self._def_model = svc.get(
-            "default_model", self._models[0] if self._models else "G_16000"
+            "default_model", self._models[0] if self._models else None
         )
         self._stat_count = len(self._history.all())
 
@@ -370,11 +372,14 @@ class MainWindow(QMainWindow):
         m_col.setSpacing(4)
         m_col.addWidget(_txt("音色模型", 12, TEXT_SEC))
         self._model_combo = QComboBox()
-        self._model_combo.addItems(self._models if self._models else ["G_16000"])
+        self._model_combo.addItems(self._models)
         d = self._def_model
         self._model_combo.setCurrentText(
-            d if d in self._models else (self._models[0] if self._models else "G_16000")
+            d if d in self._models else (self._models[0] if self._models else "")
         )
+        if not self._models:
+            self._model_combo.setPlaceholderText("未发现音色模型")
+            self._model_combo.setEnabled(False)
         m_col.addWidget(self._model_combo)
         row1.addLayout(m_col, stretch=1)
 
@@ -807,6 +812,12 @@ class MainWindow(QMainWindow):
     def _start(self) -> None:
         if not self._input_path:
             self._log_view.append("⚠ 请先选择音频文件")
+            return
+
+        if not self._model_combo.currentText().strip():
+            self._log_view.append(
+                "⚠ 未发现可用的音色模型，请先放入模型并配置 config/voices.json"
+            )
             return
 
         self._gen.setEnabled(False)

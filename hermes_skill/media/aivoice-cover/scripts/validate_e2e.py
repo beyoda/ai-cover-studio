@@ -1,32 +1,41 @@
 #!/usr/bin/env python3
-"""Hermes → AIVOICE Skill local E2E checks (discovery + parse; optional real cover)."""
+"""Hermes → AIVOICE Skill local E2E checks (discovery + parse; optional real cover).
+
+Voice data is synthetic and injected per run through ``AIVOICE_VOICES_CONFIG``,
+so this works on a fresh clone with an empty ``config/voices.json`` and never
+depends on a private voice id or a maintainer path.
+
+    python validate_e2e.py              # discovery + parse + registry listing
+    python validate_e2e.py --skip-cover # (default already skips the GPU cover)
+
+To additionally exercise a real cover (needs a GPU runtime and audio you are
+authorized to process):
+
+    set AIVOICE_E2E_AUDIO=C:\\path\\to\\your-authorized-track.mp3
+"""
 
 from __future__ import annotations
 
 import argparse
 import json
-import subprocess
+import shutil
 import sys
-import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[4]
 SCRIPTS = Path(__file__).resolve().parent
-SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
 sys.path.insert(0, str(SCRIPTS))
 
+import testkit  # noqa: E402
 from param_parse import (  # noqa: E402
     extract_cover_params_from_utterances,
     parse_source_and_voice,
     song_display_name,
 )
 
-PY = ROOT / ".venv" / "Scripts" / "python.exe"
-COVER = SCRIPTS / "aivoice_cover.py"
-SKILL_MD = SCRIPTS.parent / "SKILL.md"
-UTTERANCE = "使用示例歌手声音翻唱 示例歌手 - 示例曲目.mp3"
+ROOT = testkit.ROOT
+SKILL_MD = testkit.SKILL_MD
+UTTERANCE = "使用Alpha声音翻唱 示例歌手 - 示例曲目.mp3"
+SKIPPED = "SKIP"
 
 
 def _ok(name: str, cond: bool, detail: str = "") -> bool:
@@ -35,8 +44,24 @@ def _ok(name: str, cond: bool, detail: str = "") -> bool:
     return cond
 
 
-def check_hermes_discovery() -> bool:
-    ok = True
+def _skip(name: str, why: str) -> str:
+    print(f"[{SKIPPED}] {name} — {why}")
+    return SKIPPED
+
+
+def check_skill_md() -> bool:
+    ok = _ok("SKILL.md exists", SKILL_MD.is_file(), str(SKILL_MD))
+    body = SKILL_MD.read_text(encoding="utf-8")
+    ok = _ok("SKILL.md has Examples", "## Examples" in body) and ok
+    ok = _ok("SKILL.md mentions cover script", "aivoice_cover.py" in body) and ok
+    return ok
+
+
+def check_hermes_discovery() -> bool | str:
+    if shutil.which("hermes") is None:
+        return _skip("Hermes discovers aivoice-cover", "the hermes CLI is not installed here")
+    import subprocess
+
     proc = subprocess.run(
         ["hermes", "skills", "list"],
         capture_output=True,
@@ -45,17 +70,16 @@ def check_hermes_discovery() -> bool:
         errors="replace",
     )
     text = (proc.stdout or "") + (proc.stderr or "")
-    ok = _ok("Hermes discovers aivoice-cover", "aivoice-cover" in text, f"rc={proc.returncode}") and ok
-    ok = _ok("SKILL.md exists", SKILL_MD.is_file(), str(SKILL_MD)) and ok
-    body = SKILL_MD.read_text(encoding="utf-8")
-    ok = _ok("SKILL.md has Examples", "## Examples" in body) and ok
-    ok = _ok("SKILL.md mentions cover script", "aivoice_cover.py" in body) and ok
-    return ok
+    return _ok(
+        "Hermes discovers aivoice-cover",
+        "aivoice-cover" in text,
+        f"rc={proc.returncode}",
+    )
 
 
 def check_param_parse() -> bool:
     parsed = parse_source_and_voice(UTTERANCE)
-    ok = _ok("parse voice_id=example_voice", parsed.get("voice_id") == "example_voice", str(parsed))
+    ok = _ok("parse voice_id=alpha", parsed.get("voice_id") == "alpha", str(parsed))
     ok = _ok(
         "parse input filename",
         parsed.get("input") == "示例歌手 - 示例曲目.mp3",
@@ -64,50 +88,55 @@ def check_param_parse() -> bool:
     multi = extract_cover_params_from_utterances([UTTERANCE])
     ok = _ok(
         "extract combo",
-        multi.get("voice_id") == "example_voice" and multi.get("input") == "示例歌手 - 示例曲目.mp3",
+        multi.get("voice_id") == "alpha" and multi.get("input") == "示例歌手 - 示例曲目.mp3",
         str(multi),
     ) and ok
     ok = _ok("song_display 示例曲目", song_display_name("示例歌手 - 示例曲目") == "示例曲目") and ok
     ok = _ok(
-        "ExampleVoiceB example parse",
-        parse_source_and_voice("用ExampleVoiceB翻唱这首歌").get("voice_id") == "example_voice_b",
+        "second voice parses",
+        parse_source_and_voice("用Beta翻唱这首歌").get("voice_id") == "beta",
     ) and ok
     return ok
 
 
-def check_skill_list_voices() -> bool:
-    proc = subprocess.run(
-        [str(PY), str(COVER), "--list-voices"],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(ROOT),
-    )
+def check_skill_list_voices(voices_json: Path) -> bool:
+    proc = testkit.run_skill(["--list-voices"], voices_json=voices_json, timeout=90)
     if proc.returncode != 0:
         return _ok("skill --list-voices", False, proc.stderr[-200:])
-    data = json.loads(proc.stdout.strip().splitlines()[-1])
+    data = testkit.last_json(proc.stdout)
     ids = {v["voice_id"] for v in data.get("voices", [])}
-    return _ok("skill lists example_voice+example_voice_b", ids >= {"example_voice", "example_voice_b"}, str(ids))
+    return _ok(
+        "skill lists the registered voices",
+        ids == set(testkit.SYNTHETIC_VOICE_IDS),
+        str(sorted(ids)),
+    )
 
 
-def run_real_cover() -> tuple[bool, dict]:
+def run_real_cover(voices_json: Path) -> tuple[bool | str, dict]:
+    import os
+
+    audio_raw = (os.environ.get("AIVOICE_E2E_AUDIO") or "").strip()
+    if not audio_raw:
+        return (
+            _skip("real cover", "set AIVOICE_E2E_AUDIO to run it"),
+            {},
+        )
+    audio = Path(audio_raw).expanduser()
+    if not audio.is_file():
+        return _ok("real cover", False, f"audio not found: {audio}"), {}
+
+    voice = (os.environ.get("AIVOICE_E2E_VOICE") or "").strip() or testkit.SYNTHETIC_VOICE_IDS[0]
     payload = {
-        "input": "示例歌手 - 示例曲目.mp3",
-        "voice_id": "example_voice",
+        "input": str(audio),
+        "voice_id": voice,
         "pitch": 0,
         "options": {"reverb": "关闭", "export_mp3": True},
     }
-    t0 = time.time()
-    proc = subprocess.run(
-        [str(PY), str(COVER), "--json", json.dumps(payload, ensure_ascii=False), "--timeout", "600"],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(ROOT),
+    proc = testkit.run_skill(
+        ["--json", json.dumps(payload, ensure_ascii=False), "--timeout", "600"],
+        voices_json=voices_json,
+        timeout=660,
     )
-    elapsed = time.time() - t0
     lines = [ln.strip() for ln in (proc.stdout or "").splitlines() if ln.strip()]
     data: dict = {}
     if lines:
@@ -115,40 +144,42 @@ def run_real_cover() -> tuple[bool, dict]:
             data = json.loads(lines[-1])
         except json.JSONDecodeError:
             data = {"status": "failed", "error": "bad stdout", "raw": lines[-1]}
-    data["_elapsed_wall"] = round(elapsed, 1)
     data["_rc"] = proc.returncode
     data["_stderr_tail"] = (proc.stderr or "")[-1500:]
 
-    out = data.get("output_path")
-    ok = (
-        proc.returncode == 0
-        and data.get("status") == "completed"
-        and bool(out)
-        and Path(str(out)).is_file()
-        and data.get("voice") == "示例歌手"
-        and data.get("song") == "示例曲目"
+    # The skill enqueues; "queued" is the success state (see SKILL.md).
+    ok = _ok(
+        "real cover enqueued",
+        proc.returncode == 0 and data.get("status") == "queued",
+        json.dumps(
+            {k: data.get(k) for k in ("status", "song", "voice", "pitch", "job_id", "error")},
+            ensure_ascii=False,
+        ),
     )
-    _ok("real CoverService e2e", ok, json.dumps({k: data.get(k) for k in (
-        "status", "song", "voice", "pitch", "duration", "output_path", "job_id", "error"
-    )}, ensure_ascii=False))
     return ok, data
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--skip-cover", action="store_true")
+    ap.add_argument("--skip-cover", action="store_true", help="skip the GPU cover stage")
     args = ap.parse_args()
 
-    results = {
-        "hermes_discovery": check_hermes_discovery(),
-        "param_parse": check_param_parse(),
-        "skill_list_voices": check_skill_list_voices(),
-    }
-    cover_data: dict = {}
-    if not args.skip_cover:
-        results["real_cover"], cover_data = run_real_cover()
-    else:
-        results["real_cover"] = None
+    with testkit.temporary_workspace("aivoice_validate_e2e_") as tmp:
+        voices_json = testkit.make_synthetic_registry(Path(tmp))
+        testkit.activate_registry(voices_json)
+        print(f"synthetic registry: {voices_json}")
+
+        results: dict[str, bool | str | None] = {
+            "skill_md": check_skill_md(),
+            "hermes_discovery": check_hermes_discovery(),
+            "param_parse": check_param_parse(),
+            "skill_list_voices": check_skill_list_voices(voices_json),
+        }
+        cover_data: dict = {}
+        if args.skip_cover:
+            results["real_cover"] = None
+        else:
+            results["real_cover"], cover_data = run_real_cover(voices_json)
 
     summary = {
         "results": results,
@@ -160,6 +191,7 @@ def main() -> int:
         if cover_data
         else None,
     }
+    # workdir/ is git-ignored; keep the JSON there so the tree stays clean.
     out_path = ROOT / "workdir" / "hermes_e2e_result.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")

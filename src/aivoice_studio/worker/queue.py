@@ -23,12 +23,20 @@ class JobQueueError(RuntimeError):
     """Filesystem queue protocol error."""
 
 
+# Override for the queue root. Defaults to ``<repo>/jobs``; set this to keep a
+# deployment's queue outside the working copy, or to isolate a validation run.
+JOBS_ROOT_ENV_VAR = "AIVOICE_JOBS_DIR"
+
+
 def default_jobs_root() -> Path:
+    override = (os.environ.get(JOBS_ROOT_ENV_VAR) or "").strip()
+    if override:
+        return Path(override)
     return project_root() / "jobs"
 
 
 class FileJobQueue:
-    """Persistent FS queue per aivoice_v1.3_worker_interface_contract.md."""
+    """Persistent FS queue per docs/internal/aivoice_v1.3_worker_interface_contract.md."""
 
     BUCKETS = JobStatus.BUCKETS
 

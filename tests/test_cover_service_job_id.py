@@ -10,7 +10,7 @@ from aivoice_studio.cover.service.cover_service import CoverService
 
 
 def _request() -> CoverRequest:
-    return CoverRequest(input_audio=r"D:\songs\a.mp3", voice_id="example_voice_b", pitch=0)
+    return CoverRequest(input_audio=r"D:\songs\a.mp3", voice_id="example_voice", pitch=0)
 
 
 def test_run_forwards_job_id_to_adapter():

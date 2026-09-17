@@ -47,7 +47,7 @@ class ModelManager:
         if exact.exists():
             return exact
 
-        # Prefer config1.json — both G_16000 and G_27200 use vec768l12
+        # Prefer config1.json — the conventional name for a vec768l12 config
         preferred = self.models_dir / "config1.json"
         if preferred.exists():
             return preferred

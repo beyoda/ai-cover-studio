@@ -17,7 +17,6 @@ import importlib
 import json
 import re
 import sys
-from importlib.metadata import requires
 from pathlib import Path
 
 import pytest
@@ -41,6 +40,32 @@ WINDOWS_ABSOLUTE = re.compile(r"\b[A-Za-z]:[\\/]")
 # A user-profile path leaks the machine owner's name even when the drive differs.
 USER_PROFILE_PATH = re.compile(r"[\\/]Users[\\/]", re.IGNORECASE)
 CELEBRITY_TOKENS = ("示例歌手", "示例歌手", "example_voice", "ExampleVoice")
+
+# Documented stand-ins such as ``C:/path/to/your-authorized-track.mp3`` are
+# portable by construction and must not be reported as machine-specific.
+PLACEHOLDER_PATH_HINTS = ("path/to", "path\\to", "your-", "<", "example.com")
+
+
+def machine_specific_paths(text: str) -> list[str]:
+    """Drive-letter and user-profile path tokens, excluding documented placeholders.
+
+    ``C:\\path\\to\\...``  (JSON-escaped inside a code block) is normalised before
+    the placeholder check so both spellings of the same stand-in are accepted.
+    """
+    found: list[str] = []
+    for line in text.splitlines():
+        if not WINDOWS_ABSOLUTE.search(line) and not USER_PROFILE_PATH.search(line):
+            continue
+        for token in re.split(r"[\s`\"'()\[\],;=]+", line):
+            if not token:
+                continue
+            if not (WINDOWS_ABSOLUTE.search(token) or USER_PROFILE_PATH.search(token)):
+                continue
+            normalised = token.lower().replace("\\\\", "\\")
+            if any(hint in normalised for hint in PLACEHOLDER_PATH_HINTS):
+                continue
+            found.append(token)
+    return found
 
 
 def read(relative: str) -> str:
@@ -206,10 +231,79 @@ def test_readme_links_resolve_on_a_fresh_clone() -> None:
     assert broken == [], f"README.md links point at missing paths: {broken}"
 
 
+def test_tracked_markdown_links_resolve() -> None:
+    """Any relative link between shipped documents must resolve.
+
+    Covers the docs tree (including ``docs/internal/``) so a reorganization
+    cannot leave dangling cross-references behind. Glob patterns, anchors, and
+    external URLs are not link targets and are skipped.
+    """
+    broken: list[str] = []
+    for relative in tracked_files():
+        if not relative.lower().endswith(".md"):
+            continue
+        source = ROOT / relative
+        if not source.is_file():
+            continue
+        text = source.read_text(encoding="utf-8", errors="replace")
+        for target in MARKDOWN_LINK.findall(text):
+            raw = target.strip()
+            if raw.startswith(("http://", "https://", "mailto:", "#", "//")):
+                continue
+            if "*" in raw or "{" in raw:
+                continue
+            clean = raw.split("#", 1)[0].strip()
+            if not clean:
+                continue
+            if not (source.parent / clean).exists():
+                broken.append(f"{relative} -> {raw}")
+    assert broken == [], f"dangling relative links: {broken}"
+
+
+def test_docs_do_not_reference_machine_specific_paths() -> None:
+    """Documentation must stay portable, like the shipped configuration."""
+    offenders: dict[str, list[str]] = {}
+    for relative in tracked_files():
+        if not relative.lower().endswith(".md"):
+            continue
+        source = ROOT / relative
+        if not source.is_file():
+            continue
+        hits = machine_specific_paths(source.read_text(encoding="utf-8", errors="replace"))
+        if hits:
+            offenders[relative] = sorted(set(hits))
+    assert offenders == {}, f"machine-specific paths in documentation: {offenders}"
+
+
 def test_readme_does_not_advertise_removed_assets() -> None:
     text = read("README.md")
     for token in CELEBRITY_TOKENS:
         assert token not in text, f"README.md still references {token!r}"
+
+
+# User-facing documentation shipped to readers of the public repository.
+PUBLIC_DOC_GLOBS = ("README.md", "CHANGELOG.md", "ROADMAP.md", "CONTRIBUTING.md", "SECURITY.md")
+PRIVATE_VOICE_TOKENS = ("示例歌手", "示例歌手", "example_voice", "ExampleVoice", "example_voice_b", "ExampleVoiceB", "示例歌手", "示例歌手")
+
+
+def public_doc_files() -> list[str]:
+    files = [name for name in PUBLIC_DOC_GLOBS if (ROOT / name).is_file()]
+    for directory in ("docs", "hermes_skill"):
+        for path in sorted((ROOT / directory).rglob("*.md")):
+            files.append(str(path.relative_to(ROOT)))
+    return files
+
+
+@pytest.mark.parametrize("relative", public_doc_files())
+def test_shipped_documentation_uses_no_private_voice_reference(relative: str) -> None:
+    """Docs must not ship a maintainer-specific voice id, alias, or display name."""
+    text = read(relative)
+    offenders = [
+        token
+        for token in PRIVATE_VOICE_TOKENS
+        if re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])", text)
+    ]
+    assert offenders == [], f"{relative} references private voice token(s): {offenders}"
 
 
 # --- Declared dependencies ---------------------------------------------------
@@ -238,17 +332,34 @@ CORE_IMPORTABLE_PACKAGES = (
 
 
 def declared_distributions() -> set[str]:
-    """Distribution names declared for aivoice-studio (core + extras)."""
-    try:
-        raw = requires("aivoice-studio") or []
-    except Exception:  # pragma: no cover - not installed as a distribution
-        return set()
+    """Distribution names declared by *this repository's* ``pyproject.toml``.
+
+    The installed distribution metadata is deliberately not consulted: an
+    editable install from another checkout (or a stale ``aivoice-studio`` in the
+    interpreter's path) would silently satisfy — or hide — this guard, making the
+    test pass or skip depending on the machine rather than on the working tree.
+    """
+    project = load_pyproject().get("project") or {}
+    raw_requirements: list[str] = list(project.get("dependencies") or [])
+    for extra_requirements in (project.get("optional-dependencies") or {}).values():
+        raw_requirements.extend(extra_requirements or [])
     names: set[str] = set()
-    for requirement in raw:
-        name = re.split(r"[<>=!~\[;\s]", requirement.strip(), maxsplit=1)[0]
+    for requirement in raw_requirements:
+        name = re.split(r"[<>=!~\[;\s]", str(requirement).strip(), maxsplit=1)[0]
         if name:
             names.add(name.lower().replace("_", "-"))
     return names
+
+
+def load_pyproject() -> dict:
+    """Parse ``pyproject.toml`` with the stdlib TOML reader (3.11+) or ``tomli``."""
+    text = read("pyproject.toml")
+    try:
+        import tomllib
+    except ModuleNotFoundError:  # pragma: no cover - Python 3.10
+        import tomli as tomllib  # type: ignore[no-redef]
+
+    return tomllib.loads(text)
 
 
 def unguarded_module_level_imports(path: Path) -> set[str]:
@@ -272,8 +383,7 @@ def unguarded_module_level_imports(path: Path) -> set[str]:
 def test_every_unconditional_import_is_a_declared_dependency() -> None:
     """Guards against the 'works on my machine' class of clean-clone failure."""
     declared = declared_distributions()
-    if not declared:
-        pytest.skip("aivoice-studio is not installed as a distribution")
+    assert declared, "pyproject.toml declares no dependency at all"
     stdlib = set(sys.stdlib_module_names)
     offenders: dict[str, set[str]] = {}
     for path in sorted(PACKAGE_ROOT.rglob("*.py")):
@@ -284,6 +394,24 @@ def test_every_unconditional_import_is_a_declared_dependency() -> None:
             if distribution not in declared:
                 offenders.setdefault(distribution, set()).add(str(path.relative_to(ROOT)))
     assert offenders == {}, f"undeclared dependencies: {offenders}"
+
+
+def test_declared_dependencies_are_read_from_this_checkout() -> None:
+    """The guard must not depend on installed metadata from another directory."""
+    declared = declared_distributions()
+    assert {"pyqt6", "pyyaml", "rich", "requests"} <= declared, sorted(declared)
+
+
+def test_optional_extras_are_scanned_too() -> None:
+    declared = declared_distributions()
+    assert "flask" in declared, "the server extra should be included in the scan"
+    assert "pillow" in declared, "the images extra should be included in the scan"
+
+
+def test_pyproject_parsing_survives_a_missing_parser() -> None:
+    """``tomllib`` is 3.11+; the 3.10 fallback is exercised by construction."""
+    data = load_pyproject()
+    assert data["project"]["name"] == "aivoice-studio"
 
 
 @pytest.mark.parametrize("module", CORE_IMPORTABLE_PACKAGES)

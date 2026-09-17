@@ -380,7 +380,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_AUDIO,
         help=f"Input mp3 (default: {DEFAULT_AUDIO})",
     )
-    p.add_argument("--voice-id", default="example_voice_b", help="Voice id (default: example_voice_b)")
+    p.add_argument("--voice-id", default="example_voice", help="Voice id (default: example_voice)")
     p.add_argument(
         "--jobs-root",
         type=Path,

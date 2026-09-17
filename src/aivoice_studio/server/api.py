@@ -17,15 +17,34 @@ from aivoice_studio.utils.paths import project_root, resolve_path
 app = Flask(__name__)
 app.register_blueprint(feishu)
 
-_state = {
-    "model": "G_16000", "pitch": 0, "reverb": "关闭",
-    "total_covers": 0, "last_cover": "", "last_time": 0.0,
-}
-
 cfg = ConfigLoader().load()
 MODEL_MAP = ModelConfigMap(cfg.get("svc", {}).get("models_dir", "models"))
 UPLOAD_DIR = project_root() / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def available_models() -> list[str]:
+    """Models present on this machine.
+
+    Empty on a fresh clone: no checkpoint ships with this repository, so there
+    is deliberately no fallback model name.
+    """
+    return MODEL_MAP.list_models()
+
+
+def default_model() -> str | None:
+    """Configured default, else the first locally installed model, else ``None``."""
+    configured = cfg.get("svc", {}).get("default_model")
+    if configured:
+        return str(configured)
+    models = available_models()
+    return models[0] if models else None
+
+
+_state = {
+    "model": default_model(), "pitch": 0, "reverb": "关闭",
+    "total_covers": 0, "last_cover": "", "last_time": 0.0,
+}
 
 INDEX_HTML = r"""<!DOCTYPE html>
 <html lang="zh">
@@ -156,7 +175,7 @@ document.getElementById('go').onclick=async()=>{
 
 @app.route("/")
 def index():
-    models = MODEL_MAP.list_models() or ["G_16000"]
+    models = available_models()
     opts = "\n".join(f'<option value="{m}">{m}</option>' for m in models)
     return render_template_string(
         INDEX_HTML, model_options=opts, model_list=", ".join(models),
@@ -166,7 +185,7 @@ def index():
 
 @app.route("/api/models")
 def api_models():
-    return jsonify({"models": MODEL_MAP.list_models()})
+    return jsonify({"models": available_models()})
 
 
 @app.route("/api/status")
@@ -185,6 +204,8 @@ def api_cover():
     f.save(str(upload_path))
 
     model = request.form.get("model", _state["model"])
+    if not model:
+        return jsonify({"error": "本机还没有可用的音色模型，请先配置后再试"}), 400
     pitch = int(request.form.get("pitch", _state["pitch"]))
     reverb = request.form.get("reverb", _state["reverb"])
     _state.update(model=model, pitch=pitch, reverb=reverb)

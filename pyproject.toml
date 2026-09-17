@@ -23,7 +23,7 @@ download = ["yt-dlp>=2024.7.16"]
 images = ["pillow>=10.0"]
 # Profiling sampler and media probing; imported lazily.
 diagnostics = ["psutil>=5.9", "ffmpeg-python>=0.2.0"]
-dev = ["pytest>=8.0", "ruff>=0.5", "pyinstaller>=6.6"]
+dev = ["pytest>=8.0", "ruff>=0.5", "pyinstaller>=6.6", "tomli>=2.0; python_version < '3.11'"]
 
 [project.scripts]
 aivoice = "aivoice_studio.cli:main"

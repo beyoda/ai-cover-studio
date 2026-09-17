@@ -10,9 +10,9 @@ from aivoice_studio.utils.process import scrubbed_subprocess_env
 def test_scrubbed_subprocess_env_drops_pythonpath_and_venv():
     base = {
         "PATH": "C:\\Windows\\System32",
-        "PYTHONPATH": r"C:\AI\hermes\hermes-agent\venv\Lib\site-packages",
-        "VIRTUAL_ENV": r"C:\AI\hermes\hermes-agent\venv",
-        "PYTHONHOME": r"C:\AI\hermes\hermes-agent\venv",
+        "PYTHONPATH": r"C:\tools\hermes-agent\venv\Lib\site-packages",
+        "VIRTUAL_ENV": r"C:\tools\hermes-agent\venv",
+        "PYTHONHOME": r"C:\tools\hermes-agent\venv",
         "FOO": "keep-me",
     }
     cleaned = scrubbed_subprocess_env(base)

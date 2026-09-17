@@ -8,7 +8,7 @@ from pathlib import Path
 from aivoice_studio.models.results import UVRResult
 from aivoice_studio.modules.uvr.config import UVRConfig
 from aivoice_studio.utils.paths import project_root
-from aivoice_studio.utils.process import ProcessError, run_command
+from aivoice_studio.utils.process import ProcessError, run_command, split_command_template
 
 
 class UVRService:
@@ -18,13 +18,12 @@ class UVRService:
 
     @staticmethod
     def _split_command(template: str, **kwargs: str) -> list[str]:
-        """Build argument list from template, replacing {placeholders} with values."""
-        result: list[str] = []
-        for token in template.split():
-            # Replace placeholders
-            token = token.format(**kwargs)
-            result.append(token)
-        return result
+        """Build argument list from template, replacing {placeholders} with values.
+
+        Values may contain spaces (e.g. ``C:\\Program Files\\...`` or a song file
+        under ``My Music``); see :func:`split_command_template`.
+        """
+        return split_command_template(template, **kwargs)
 
     def _build_command(self, input_path: Path, output_dir: Path) -> list[str]:
         """Expand the configured template.

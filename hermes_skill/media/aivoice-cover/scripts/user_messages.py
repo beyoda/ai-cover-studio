@@ -22,6 +22,8 @@ QUEUED_ACK = "已收到，翻唱已进入制作队列。完成后会通知你。
 
 def format_voices_help(voices: list[dict[str, Any]]) -> str:
     lines = ["当前可用音色：", ""]
+    # Example line is derived from the registry, never hardcoded.
+    demo_id = str(voices[0].get("voice_id") or "") if voices else "<音色 id>"
     for row in voices:
         vid = str(row.get("voice_id") or "")
         name = str(row.get("display_name") or vid)
@@ -29,7 +31,7 @@ def format_voices_help(voices: list[dict[str, Any]]) -> str:
         lines.append(f"🎤 {vid}")
         lines.append(f"   {name}" + (f" — {desc}" if desc else ""))
         lines.append("")
-    lines.append("回复示例：用 example_voice_b 翻唱晴天")
+    lines.append(f"回复示例：用 {demo_id} 翻唱<歌名>")
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -94,13 +96,13 @@ def friendly_error(exc: BaseException | str) -> str:
             "3. 上传本地文件或公开直链\n"
         )
     if "unknown voice" in low or "未知音色" in text:
-        return "未识别该音色。请先问「有哪些声音」，或使用 example_voice / example_voice_b。"
+        return "未识别该音色。请先问「有哪些声音」查看当前注册的音色。"
     if "file not found" in low or "not found" in low and (".mp3" in low or "path" in low):
         return "找不到音频文件。请检查路径，或改用歌名搜索 / 直链。"
     if "no playable url" in low or "copyright" in low:
         return "这首歌暂时没有可下载音源（可能受版权限制）。请换一个版本或用本地文件。"
     if "invalid request" in low or "json" in low:
-        return "请求格式有误。请重新说：用 example_voice_b 翻唱<歌名>。"
+        return "请求格式有误。请重新说：用<音色 id>翻唱<歌名>。"
     if "序号" in text or "无法识别该选择" in text or "没有待选" in text:
         return text if text.endswith("\n") else text + "\n"
 

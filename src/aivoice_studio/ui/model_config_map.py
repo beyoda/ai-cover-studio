@@ -50,7 +50,7 @@ class ModelConfigMap:
                 f"No config file found for model '{model_name}' in {self.models_dir}"
             )
 
-        # Prefer configs with vec768l12 encoder (768-dim, matches G_16000/G_27200)
+        # Prefer configs with a vec768l12 encoder (768-dim, common for 4.x models)
         vec768_configs = []
         hubertsoft_configs = []
         for cfg in configs:
@@ -64,7 +64,7 @@ class ModelConfigMap:
             except (json.JSONDecodeError, KeyError):
                 pass
 
-        # vec768l12 models (G_16000, G_27200) need vec768 config
+        # A vec768l12 model needs a matching vec768 config
         chosen = vec768_configs[0] if vec768_configs else (
             hubertsoft_configs[0] if hubertsoft_configs else configs[0]
         )

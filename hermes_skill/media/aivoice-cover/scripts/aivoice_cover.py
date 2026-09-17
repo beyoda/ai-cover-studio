@@ -106,6 +106,11 @@ def _infer_delivery_id_from_gateway_log() -> str | None:
 
 def _kick_cover_pipeline() -> None:
     """Fire-and-forget on-demand worker+notifier. Never raise to caller."""
+    if (os.environ.get("AIVOICE_SKIP_PIPELINE_KICK") or "").strip() not in ("", "0"):
+        # Deployments that run a supervised worker set this to avoid a second
+        # consumer racing the queue; validation harnesses use it to stay offline.
+        _log("kick_skipped reason=AIVOICE_SKIP_PIPELINE_KICK")
+        return
     script = AIVOICE_ROOT / "scripts" / "kick_cover_pipeline.py"
     py = AIVOICE_ROOT / ".venv" / "Scripts" / "python.exe"
     if not script.is_file():

@@ -12,6 +12,49 @@ class ProcessError(RuntimeError):
     pass
 
 
+def split_command_template(template: str, **values: str) -> list[str]:
+    """Expand a configured command template into an argv list.
+
+    The template is tokenised *before* substitution, so a value may contain
+    spaces without being split into separate arguments and without needing
+    quoting in the configuration file::
+
+        split_command_template("{python} run.py --input {input}",
+                               python="C:/Program Files/Python/python.exe",
+                               input="C:/music/my song.mp3")
+        # -> ['C:/Program Files/Python/python.exe', 'run.py', '--input', 'C:/music/my song.mp3']
+
+    Single or double quotes around a token are honoured and removed, so a value
+    that is intentionally empty can be written as ``""``. Backslashes are kept
+    verbatim (no escape processing), so Windows paths in a template survive.
+
+    ``str.format`` semantics are preserved: an unknown ``{placeholder}`` raises
+    ``KeyError`` rather than silently reaching the child process.
+    """
+    tokens: list[str] = []
+    buf: list[str] = []
+    quote: str | None = None
+    for char in template or "":
+        if quote is not None:
+            if char == quote:
+                quote = None
+            else:
+                buf.append(char)
+            continue
+        if char in "\"'":
+            quote = char
+            continue
+        if char.isspace():
+            if buf:
+                tokens.append("".join(buf))
+                buf.clear()
+            continue
+        buf.append(char)
+    if buf:
+        tokens.append("".join(buf))
+    return [token.format(**values) for token in tokens]
+
+
 # Vars that leak the parent interpreter (e.g. Hermes gateway venv) into
 # UVR / so-vits-svc / ffmpeg child processes and break site-packages isolation.
 _SCRUB_ENV_KEYS = (

@@ -22,9 +22,9 @@ def test_complete_writes_outbox(tmp_path: Path):
     audio.write_bytes(b"ID3x")
     job = q.enqueue_job(
         input_audio=str(audio),
-        voice_id="example_voice_b",
+        voice_id="example_voice",
         hermes_session_id="sess-outbox",
-        metadata={"song": "clip30", "voice": "ExampleVoiceB"},
+        metadata={"song": "clip30", "voice": "ExampleVoice"},
     )
     out = tmp_path / "outputs" / job.job_id / "cover.mp3"
     out.parent.mkdir(parents=True)
@@ -54,7 +54,7 @@ def test_complete_writes_outbox(tmp_path: Path):
     assert payload["notify_status"] == NotifyStatus.PENDING
     assert payload["output_path"] == done.output_path == str(out)
     assert payload["song"] == "clip30"
-    assert payload["voice_id"] == "example_voice_b"
+    assert payload["voice_id"] == "example_voice"
     assert payload["hermes_session_id"] == "sess-outbox"
     assert payload["feishu_chat_id"] is None
     assert payload["retry_count"] == 0
@@ -62,7 +62,7 @@ def test_complete_writes_outbox(tmp_path: Path):
 
 def test_fail_does_not_write_outbox(tmp_path: Path):
     q = FileJobQueue(tmp_path)
-    job = q.enqueue_job(input_audio=str(tmp_path / "missing.mp3"), voice_id="example_voice_b")
+    job = q.enqueue_job(input_audio=str(tmp_path / "missing.mp3"), voice_id="example_voice")
     claimed = q.claim_next_job()
     assert claimed is not None
     failed = execute_claimed_job(q, claimed)
@@ -75,7 +75,7 @@ def test_outbox_idempotent_keeps_sent(tmp_path: Path):
     q = FileJobQueue(tmp_path)
     audio = tmp_path / "in.mp3"
     audio.write_bytes(b"ID3x")
-    job = q.enqueue_job(input_audio=str(audio), voice_id="example_voice_b")
+    job = q.enqueue_job(input_audio=str(audio), voice_id="example_voice")
     claimed = q.claim_next_job()
     assert claimed is not None
     done = q.complete_job(job.job_id, output_path=str(tmp_path / "x.mp3"))

@@ -1,0 +1,12 @@
+{
+  "_readme": [
+    "Optional search hints. Nothing here selects a voice or grants any right.",
+    "Some upstream search APIs index an artist under a different spelling than",
+    "the one people say out loud (for example a Chinese name vs. a Latin stage",
+    "name). Add those spellings here and the search layer will try them too.",
+    "Leave 'aliases' empty and the search layer behaves as if the file was absent.",
+    "This file is local configuration: keep your own entries out of version control",
+    "if they identify a private or unlicensed track."
+  ],
+  "aliases": {}
+}

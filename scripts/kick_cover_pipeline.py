@@ -16,7 +16,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
-JOBS = ROOT / "jobs"
+# Honour the same queue-root override as ``aivoice_studio.worker.queue`` so the
+# lock check below inspects the queue the worker will actually use.
+_jobs_override = (os.environ.get("AIVOICE_JOBS_DIR") or "").strip()
+JOBS = Path(_jobs_override) if _jobs_override else ROOT / "jobs"
 LOCK_PATH = JOBS / "worker.lock"
 PY = ROOT / ".venv" / "Scripts" / "python.exe"
 HERMES_ENV = Path(os.environ.get("LOCALAPPDATA") or "") / "hermes" / ".env"

@@ -33,6 +33,20 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 _sessions: dict[str, dict] = {}
 
 
+def available_models() -> list[str]:
+    """Models present on this machine (none ship with the repository)."""
+    return MODEL_MAP.list_models()
+
+
+def default_model() -> str | None:
+    """Configured default, else the first locally installed model, else ``None``."""
+    configured = svc_cfg.get("default_model")
+    if configured:
+        return str(configured)
+    models = available_models()
+    return models[0] if models else None
+
+
 def _get_tenant_token() -> str:
     """Get Feishu tenant access token."""
     resp = requests.post(
@@ -142,7 +156,7 @@ def callback():
 
     # user session
     session = _sessions.setdefault(sender_id, {
-        "model": "G_16000", "pitch": 0, "reverb": "关闭",
+        "model": default_model(), "pitch": 0, "reverb": "关闭",
     })
 
     token = _get_tenant_token()
@@ -159,8 +173,12 @@ def callback():
                 session["model"] = parts[1]
                 _reply_text(token, msg_id, f"✓ 已切换到模型: {parts[1]}")
             else:
-                models = MODEL_MAP.list_models()
-                _reply_text(token, msg_id, f"可用模型: {', '.join(models)}")
+                models = available_models()
+                _reply_text(
+                    token,
+                    msg_id,
+                    f"可用模型: {', '.join(models)}" if models else "尚未配置任何音色模型",
+                )
 
         elif content.startswith("/音高"):
             parts = content.split()
@@ -191,7 +209,7 @@ def callback():
             _reply_text(
                 token, msg_id,
                 "发送音频文件即可翻唱\n"
-                "/模型 G_16000 — 切换模型\n"
+                "/模型 <名称> — 切换音色模型\n"
                 "/音高 +2 — 调整音高(-12~+12)\n"
                 "/混响 录音棚 — 设置混响\n"
                 "/状态 — 查看当前设置\n"
@@ -207,6 +225,14 @@ def callback():
 
         if not file_key:
             _reply_text(token, msg_id, "无法获取文件，请重试")
+            return jsonify({}), 200
+
+        if not session["model"]:
+            _reply_text(
+                token,
+                msg_id,
+                "本机还没有可用的音色模型。请先配置 config/voices.json 并放入模型后重试。",
+            )
             return jsonify({}), 200
 
         _reply_text(token, msg_id, f"收到 {file_name}，开始翻唱…\n模型: {session['model']}\n音高: {session['pitch']:+d}")

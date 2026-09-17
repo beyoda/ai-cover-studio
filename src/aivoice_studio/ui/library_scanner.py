@@ -15,7 +15,7 @@ class CoverMeta:
     folder: str          # e.g. "76d83149eea5"
     song: str            # song name
     artist: str          # artist (from filename or metadata)
-    model: str           # e.g. "G_16000"
+    model: str           # e.g. "G_10000"
     pitch: int = 0
     reverb: str = "关闭"
     created: str = ""    # ISO timestamp

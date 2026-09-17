@@ -1,0 +1,20 @@
+{
+  "_readme": [
+    "Request skeleton for `aivoice_cover.py --json-file`. Copy it, replace the",
+    "placeholders, and delete the _readme key. The placeholder values below are",
+    "intentionally not runnable.",
+    "  input    : a local audio path (mp3/wav/flac/m4a/ogg/aac/wma/mp4) OR omit it",
+    "             and use `source` for a public http(s) mp3 URL.",
+    "  voice_id : a voice_id that is present and enabled in your config/voices.json.",
+    "             Run `--list-voices` to see the ids registered on your machine.",
+    "  options  : optional; reverb is one of 关闭 | 录音棚 | 现场 (or true/false).",
+    "Only process audio you are authorized to use. See docs/DISCLAIMER.md."
+  ],
+  "input": "C:/path/to/your-authorized-track.mp3",
+  "voice_id": "your_voice_id",
+  "pitch": 0,
+  "options": {
+    "reverb": "关闭",
+    "export_mp3": true
+  }
+}

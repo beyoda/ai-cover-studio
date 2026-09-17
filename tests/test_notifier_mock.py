@@ -17,7 +17,7 @@ def _write_pending(
     chat_id: str | None,
     output_path: Path,
     song: str = "clip30",
-    voice_id: str = "example_voice_b",
+    voice_id: str = "example_voice",
 ) -> Path:
     outbox.mkdir(parents=True, exist_ok=True)
     path = outbox / f"{job_id}.notify.json"

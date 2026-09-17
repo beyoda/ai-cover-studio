@@ -28,7 +28,7 @@ def main() -> int:
         # --- enqueue ---
         job = q.enqueue_job(
             input_audio=str(fake_audio),
-            voice_id="example_voice_b",
+            voice_id="example_voice",
             pitch=0,
             source="validate",
         )
@@ -85,7 +85,7 @@ def main() -> int:
         )
 
         # --- fail path (second job) ---
-        job2 = q.enqueue_job(input_audio=str(fake_audio), voice_id="example_voice")
+        job2 = q.enqueue_job(input_audio=str(fake_audio), voice_id="example_voice_b")
         c2 = q.claim_next_job()
         assert c2 and c2.job_id == job2.job_id
         failed = q.fail_job(job2.job_id, error="simulated failure")

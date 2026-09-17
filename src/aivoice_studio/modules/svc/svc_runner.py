@@ -10,7 +10,7 @@ from pathlib import Path
 from aivoice_studio.models.results import SVCResult
 from aivoice_studio.modules.svc.model_manager import ModelManager
 from aivoice_studio.utils.paths import resolve_path
-from aivoice_studio.utils.process import ProcessError, run_command
+from aivoice_studio.utils.process import ProcessError, run_command, split_command_template
 
 
 @dataclass(slots=True)
@@ -158,9 +158,9 @@ class SVCService:
 
     @staticmethod
     def _split_command(template: str, **kwargs: str) -> list[str]:
-        """Build argument list from template, replacing {placeholders} with values."""
-        result: list[str] = []
-        for token in template.split():
-            token = token.format(**kwargs)
-            result.append(token)
-        return result
+        """Build argument list from template, replacing {placeholders} with values.
+
+        Values may contain spaces (e.g. a runtime under ``C:\\Program Files``);
+        see :func:`aivoice_studio.utils.process.split_command_template`.
+        """
+        return split_command_template(template, **kwargs)

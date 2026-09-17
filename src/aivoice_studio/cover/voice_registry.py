@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from aivoice_studio.utils.paths import project_root, resolve_path
+
+# Optional override so test/validation harnesses can point the registry at a
+# synthetic voice file instead of the user's real ``config/voices.json``.
+# Never set this in normal operation.
+VOICES_CONFIG_ENV_VAR = "AIVOICE_VOICES_CONFIG"
 
 
 class VoiceRegistryError(LookupError):
@@ -49,7 +55,15 @@ class VoiceRegistry:
 
     @classmethod
     def load(cls, path: Path | str | None = None) -> VoiceRegistry:
-        cfg_path = Path(path) if path else project_root() / "config" / "voices.json"
+        if path is not None:
+            cfg_path = Path(path)
+        else:
+            override = (os.environ.get(VOICES_CONFIG_ENV_VAR) or "").strip()
+            cfg_path = (
+                Path(override)
+                if override
+                else project_root() / "config" / "voices.json"
+            )
         if not cfg_path.is_file():
             raise FileNotFoundError(f"voices.json not found: {cfg_path}")
         data = json.loads(cfg_path.read_text(encoding="utf-8"))

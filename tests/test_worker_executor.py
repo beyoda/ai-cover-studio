@@ -19,7 +19,7 @@ def test_execute_claimed_job_completes(tmp_path: Path):
     out.parent.mkdir(parents=True)
     out.write_bytes(b"ID3y")
 
-    job = q.enqueue_job(input_audio=str(audio), voice_id="example_voice_b", pitch=0)
+    job = q.enqueue_job(input_audio=str(audio), voice_id="example_voice", pitch=0)
     claimed = q.claim_next_job()
     assert claimed is not None
 
@@ -51,7 +51,7 @@ def test_execute_missing_input_fails(tmp_path: Path):
     q = FileJobQueue(tmp_path)
     job = q.enqueue_job(
         input_audio=str(tmp_path / "missing.mp3"),
-        voice_id="example_voice_b",
+        voice_id="example_voice",
     )
     claimed = q.claim_next_job()
     assert claimed is not None

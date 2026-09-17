@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 from pathlib import Path
@@ -10,11 +11,16 @@ from typing import Any
 
 # hermes_skill/runtime/sessions/{session_id}.json
 RUNTIME_ROOT = Path(__file__).resolve().parents[3] / "runtime" / "sessions"
+# Optional relocation of the session store (validation harnesses, alternate
+# deployments). Defaults to the runtime directory above.
+SESSIONS_ENV_VAR = "AIVOICE_HERMES_SESSIONS_DIR"
 
 
 def sessions_dir() -> Path:
-    RUNTIME_ROOT.mkdir(parents=True, exist_ok=True)
-    return RUNTIME_ROOT
+    override = (os.environ.get(SESSIONS_ENV_VAR) or "").strip()
+    root = Path(override) if override else RUNTIME_ROOT
+    root.mkdir(parents=True, exist_ok=True)
+    return root
 
 
 def _safe_session_id(session_id: str) -> str:
@@ -107,6 +113,20 @@ def resolve_pick(session: dict[str, Any], pick: str | int) -> dict[str, Any]:
     raise ValueError("无法识别该选择，请回复列表中的序号或 track_id。")
 
 
+def _fallback_voice_id() -> str | None:
+    """Voice Registry default (or first enabled voice); ``None`` when none exists.
+
+    Nothing is hardcoded here: the shipped registry is an empty template, and a
+    deployment that registered no voice must fail loudly rather than pick one.
+    """
+    try:
+        from voice_lookup import default_voice_id
+
+        return default_voice_id()
+    except Exception:
+        return None
+
+
 def build_cover_request_from_pick(
     session: dict[str, Any],
     chosen: dict[str, Any],
@@ -114,7 +134,7 @@ def build_cover_request_from_pick(
     voice_id: str | None = None,
     pitch: int | None = None,
 ) -> dict[str, Any]:
-    vid = voice_id or session.get("voice_id") or "example_voice"
+    vid = voice_id or session.get("voice_id") or _fallback_voice_id()
     p = pitch if pitch is not None else int(session.get("pitch") or 0)
     label = chosen.get("label") or f"{chosen.get('name')} - {chosen.get('artist')}"
     return {

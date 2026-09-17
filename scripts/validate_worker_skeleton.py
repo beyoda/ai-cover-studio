@@ -25,7 +25,7 @@ def main() -> int:
         q = FileJobQueue(tmp)
         audio = tmp / "a.mp3"
         audio.write_bytes(b"ID3x")
-        job = q.enqueue_job(input_audio=str(audio), voice_id="example_voice_b", source="skel")
+        job = q.enqueue_job(input_audio=str(audio), voice_id="example_voice", source="skel")
         assert q.job_path(JobStatus.QUEUED, job.job_id).is_file()
         report["steps"].append({"step": "enqueue", "job_id": job.job_id, "ok": True})
 

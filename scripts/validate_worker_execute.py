@@ -27,7 +27,7 @@ def main() -> int:
         audio.write_bytes(b"ID3x")
         out = tmp / "outputs" / "willfill" / "cover.mp3"
 
-        job = q.enqueue_job(input_audio=str(audio), voice_id="example_voice_b", source="exec-validate")
+        job = q.enqueue_job(input_audio=str(audio), voice_id="example_voice", source="exec-validate")
         report["steps"].append({"step": "enqueue", "job_id": job.job_id, "ok": True})
 
         out = tmp / "outputs" / job.job_id / "cover.mp3"

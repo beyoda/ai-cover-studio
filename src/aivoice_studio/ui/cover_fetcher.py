@@ -16,6 +16,29 @@ GRADIENT_COLORS = [
     ("#3498DB", "#121212"),
 ]
 
+# CJK-capable system fonts, tried in order. The Microsoft YaHei entry keeps the
+# original Windows rendering; the others keep CJK titles legible on macOS and
+# Linux instead of dropping straight to PIL's bitmap default. Missing files are
+# skipped, so listing a font that does not exist on this machine is harmless.
+CJK_FONT_CANDIDATES = (
+    "C:/Windows/Fonts/msyh.ttc",
+    "/System/Library/Fonts/PingFang.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+)
+
+
+def _load_font(size: int):
+    """Return the first available candidate font, else PIL's built-in default."""
+    from PIL import ImageFont
+
+    for candidate in CJK_FONT_CANDIDATES:
+        try:
+            return ImageFont.truetype(candidate, size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
 
 def fetch_cover(song: str, artist: str = "", output_dir: Path | None = None) -> Optional[Path]:
     """Try to fetch cover art. Returns path to cover image or None."""
@@ -59,7 +82,7 @@ def _generate_default(title: str, output_dir: Path) -> Path:
     """Generate an 800x800 gradient cover with album title."""
     import random
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image, ImageDraw
     except ImportError:
         # fallback: create a simple solid-color image
         dest = Path(output_dir) / "cover.jpg"
@@ -79,12 +102,8 @@ def _generate_default(title: str, output_dir: Path) -> Path:
         draw.line([(0, y), (800, y)], fill=(r, g, b))
 
     # text
-    try:
-        title_font = ImageFont.truetype("C:/Windows/Fonts/msyh.ttc", 48)
-        small_font = ImageFont.truetype("C:/Windows/Fonts/msyh.ttc", 16)
-    except OSError:
-        title_font = ImageFont.load_default()
-        small_font = title_font
+    title_font = _load_font(48)
+    small_font = _load_font(16)
 
     def draw_centered(text: str, y: int, font, fill: str = "#FFFFFF") -> None:
         bbox = draw.textbbox((0, 0), text, font=font)

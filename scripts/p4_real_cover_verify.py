@@ -1,7 +1,16 @@
-"""P4 real cover verification: submit → poll status → result."""
+"""P4 real cover verification: submit → poll status → result.
+
+Run this only on a machine that has your own rights-cleared audio and model:
+
+    python scripts/p4_real_cover_verify.py --input <your-track.mp3> --model <checkpoint-stem>
+
+No song and no checkpoint ships with this repository, so both arguments are
+required and the script exits with a clear message when they are absent.
+"""
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
@@ -17,15 +26,29 @@ from aivoice_studio.cover.uvr_cache import UvrCache
 
 
 def main() -> int:
-    audio = ROOT / "test_songs" / "示例歌手 - 示例曲目.mp3"
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to an audio file you are authorized to process",
+    )
+    parser.add_argument(
+        "--model",
+        required=True,
+        help="SVC checkpoint stem installed under svc.models_dir",
+    )
+    parser.add_argument("--pitch", type=int, default=0)
+    args = parser.parse_args()
+
+    audio = Path(args.input).expanduser()
     if not audio.is_file():
-        print(f"MISSING: {audio}")
+        print(f"MISSING input audio: {audio}")
         return 2
 
     request = CoverRequest(
         input_audio=str(audio),
-        model_name="G_16000",
-        pitch=0,
+        model_name=args.model,
+        pitch=args.pitch,
         reverb="关闭",
         f0_method="rmvpe",
         export_mp3=True,

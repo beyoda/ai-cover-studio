@@ -1,5 +1,9 @@
 # AIVOICE / AI Cover Studio
 
+<p align="center">
+  <img src="docs/assets/aivoice-hero.svg" width="900" alt="AIVOICE / AI Cover Studio">
+</p>
+
 Windows-first local AI cover pipeline: natural-language requests are resolved into local audio jobs, processed through UVR/SVC, and delivered as finished audio.
 
 > [!IMPORTANT]
@@ -23,7 +27,7 @@ Outbox / notifier -> finished audio
 
 ## Current Status
 
-`v1.0.0` is the first stable personal-use release. The maintainer has exercised the local GPU pipeline and async delivery path end to end, but the public repository is still being prepared for broader open-source reproducibility.
+The package version is `0.1.0` (see [`pyproject.toml`](pyproject.toml)); this repository is **pre-1.0 and not a stable release**. The maintainer has exercised the local GPU pipeline and the async delivery path end to end on Windows, but the public repository is still being prepared for broader open-source reproducibility, and no release is being declared until that work is finished.
 
 Known publication constraints:
 
@@ -31,7 +35,7 @@ Known publication constraints:
 - Public demo assets must be replaced with materials that have clear redistribution rights.
 - No verified runtime UI screenshots are currently available in this repository. Needed screenshots: desktop main window, job queue/progress, and a completed output or notification view.
 - Large CUDA/SVC runtime environments are intentionally not stored in Git.
-- The bundled Hermes skill under `hermes_skill/` is a reference integration written for one personal deployment. It expects the maintainer's own voice ids and local runtime layout, so adapt it (or ignore it and use the GUI/CLI) before reusing it.
+- The bundled Hermes skill under `hermes_skill/` is a **reference integration**. It keeps only its own generic logic (natural-language parsing, session state, job enqueue, status and notification plumbing) and reads voices from `config/voices.json`; it stores no absolute path and ships no voice list. Rewire or ignore it for your own deployment.
 
 ## Highlights
 
@@ -160,12 +164,20 @@ See [docs/MODEL_GUIDE.md](docs/MODEL_GUIDE.md) for the verified model format and
 | `src/aivoice_studio/` | Core application code |
 | `src/aivoice_studio/worker/` | Async job execution |
 | `src/aivoice_studio/notifier/` | Completion delivery |
-| `hermes_skill/media/aivoice-cover/` | Hermes/Feishu skill integration (personal deployment reference) |
+| `hermes_skill/media/aivoice-cover/` | Hermes/Feishu skill integration (reference deployment) |
 | `config/` | Runtime and voice configuration |
 | `scripts/` | Setup, diagnostics, and helper scripts |
-| `docs/` | Model, legal, and architecture documentation |
+| `docs/` | Model guide, disclaimer, and [`docs/internal/`](docs/internal/README.md) design notes |
 | `examples/` | Placeholder docs for user-supplied authorized examples |
 | `tests/` | Unit, contract, and configuration-consistency tests |
+
+## Documentation
+
+- [Quick Start](#quick-start) and [Bring Your Own Models](#bring-your-own-models) — get a clone running.
+- [docs/MODEL_GUIDE.md](docs/MODEL_GUIDE.md) — model format, asset placement, environment self-check.
+- [docs/DISCLAIMER.md](docs/DISCLAIMER.md) — licensing scope, authorization, training-data, and no-impersonation terms.
+- [docs/internal/](docs/internal/README.md) — engineering design notes (de-identified, informational only).
+- [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md).
 
 ## Demo Assets
 

@@ -121,26 +121,49 @@ def test_source_song_name_needs_choice(monkeypatch):
         resolve_to_audio_asset(input_path=r"D:\not_exist_aivoice_song.mp3")
 
 
-def test_expand_search_queries_tanglingshan():
+def test_expand_search_queries_splits_artist_and_title() -> None:
+    """No aliases configured: the split still yields all useful variants."""
     from aivoice_studio.cover.music_source.gdstudio import expand_search_queries
 
-    variants = expand_search_queries("示例歌手 - 示例曲目")
+    variants = expand_search_queries("示例歌手 - 示例曲目", aliases={})
     assert "示例歌手 示例曲目" in variants
     assert "示例曲目" in variants
     assert "示例歌手" in variants
+
+
+def test_expand_search_queries_uses_configured_aliases() -> None:
+    """Aliases come from local configuration and only widen the search text."""
+    from aivoice_studio.cover.music_source.gdstudio import expand_search_queries
+
+    aliases = {"示例歌手": ["ExampleArtist", "Example Artist"]}
+    variants = expand_search_queries("示例歌手 - 示例曲目", aliases=aliases)
+    assert "示例歌手 示例曲目" in variants
+    assert "示例曲目" in variants
     assert any("ExampleArtist" in v for v in variants)
 
 
-def test_search_variants_prefer_gareth(monkeypatch):
+def test_shipped_artist_aliases_file_is_empty_and_valid() -> None:
+    """The shipped alias table must not name any real artist."""
+    data = json.loads(
+        (ROOT / "config" / "artist_aliases.json").read_text(encoding="utf-8")
+    )
+    assert data["aliases"] == {}
+
+
+def test_search_variants_rank_alias_artist_first(monkeypatch):
+    from aivoice_studio.cover.music_source import gdstudio
+
     calls: list[str] = []
+    aliases = {"示例歌手": ["ExampleArtist"]}
+    monkeypatch.setattr(gdstudio, "load_artist_aliases", lambda: aliases)
 
     def fake_once(self, query, *, count=8, pages=1):
         calls.append(query)
-        if query in ("示例歌手 - 示例曲目", "示例歌手的示例曲目"):
+        if query in ("示例歌手 - 示例曲目", "示例歌手 示例曲目"):
             return []
         if query == "示例歌手":
             return [
-                SongCandidate(track_id="1", name="颜色", artist="ExampleArtist"),
+                SongCandidate(track_id="1", name="示例曲目B", artist="ExampleArtist"),
                 SongCandidate(track_id="2", name="示例曲目", artist="ExampleArtist"),
             ]
         if query == "示例曲目":
@@ -156,6 +179,22 @@ def test_search_variants_prefer_gareth(monkeypatch):
     assert rows[0].artist == "ExampleArtist"
     assert rows[0].name == "示例曲目"
     assert "示例歌手 - 示例曲目" in calls
+
+
+def test_artist_aliases_load_from_configured_file(monkeypatch, tmp_path: Path) -> None:
+    """``config/artist_aliases.json`` drives expansion without touching the code."""
+    from aivoice_studio.cover.music_source import gdstudio
+
+    cfg = tmp_path / "artist_aliases.json"
+    cfg.write_text(
+        json.dumps({"aliases": {"示例歌手": ["ExampleArtist"]}}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv(gdstudio.ARTIST_ALIASES_ENV_VAR, str(cfg))
+    assert gdstudio.load_artist_aliases() == {"示例歌手": ["ExampleArtist"]}
+
+    monkeypatch.setenv(gdstudio.ARTIST_ALIASES_ENV_VAR, str(tmp_path / "absent.json"))
+    assert gdstudio.load_artist_aliases() == {}
 
 
 def test_track_id_resolve(monkeypatch, tmp_path: Path):
@@ -185,14 +224,14 @@ def test_voice_id_plus_source_combo(
     )
 
     pp = _load_param_parse()
-    parsed = pp.parse_source_and_voice("用Alpha Voice声音翻唱晴天")
+    parsed = pp.parse_source_and_voice("用Alpha Voice声音翻唱示例曲目")
     assert parsed.get("voice_id") == "alpha"
-    assert parsed.get("source") == "晴天"
-    assert parsed.get("source_query") == "晴天"
+    assert parsed.get("source") == "示例曲目"
+    assert parsed.get("source_query") == "示例曲目"
 
-    multi = pp.extract_cover_params_from_utterances(["用Alpha Voice声音翻唱晴天"])
+    multi = pp.extract_cover_params_from_utterances(["用Alpha Voice声音翻唱示例曲目"])
     assert multi["voice_id"] == "alpha"
-    assert multi["source"] == "晴天"
+    assert multi["source"] == "示例曲目"
 
     audio = resolve_to_audio_asset(source=str(sample_mp3))
     req, asset = build_cover_request_for_voice(
@@ -208,11 +247,11 @@ def test_voice_id_plus_source_combo(
 def test_legacy_input_path_still_works(sample_mp3: Path):
     asset = resolve_to_audio_asset(input_path=str(sample_mp3))
     assert asset.source == "local"
-    req = CoverRequest(input_audio=asset.path, voice_id="example_voice", pitch=0)
+    req = CoverRequest(input_audio=asset.path, voice_id="example_voice_b", pitch=0)
     assert Path(req.input_audio).is_file()
-    assert req.voice_id == "example_voice"
+    assert req.voice_id == "example_voice_b"
 
-    dual = resolve_to_audio_asset(input_path=str(sample_mp3), source="晴天")
+    dual = resolve_to_audio_asset(input_path=str(sample_mp3), source="示例曲目")
     assert Path(dual.path).resolve() == Path(sample_mp3).resolve()
 
 

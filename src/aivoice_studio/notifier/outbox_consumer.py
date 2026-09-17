@@ -11,14 +11,10 @@ from pathlib import Path
 from typing import Any
 
 from aivoice_studio.notifier.feishu_client import FeishuClient, MockFeishuClient
-from aivoice_studio.utils.paths import project_root
 from aivoice_studio.worker.models import NotifyStatus, utc_now_iso
+from aivoice_studio.worker.queue import default_jobs_root
 
 LOG = logging.getLogger("aivoice.notifier")
-
-
-def default_jobs_root() -> Path:
-    return project_root() / "jobs"
 
 
 def format_cover_notify_text(

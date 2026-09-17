@@ -54,7 +54,7 @@ def normalize_voice_id(text: str | None) -> str | None:
     raw = str(text).strip()
     if not raw:
         return None
-    # Strip 「版本/版」 chatter: ExampleVoiceB版本 → ExampleVoiceB
+    # Strip 「版本/版」 chatter: <voice>版本 → <voice>
     raw = re.sub(r"(版本|版)$", "", raw).strip()
     try:
         from aivoice_studio.cover.voice_registry import get_voice_registry
@@ -166,7 +166,7 @@ def _looks_like_audio_file(name: str) -> bool:
 
 
 def song_display_name(title_or_path: str) -> str:
-    """Derive short song label: ``示例歌手 - 示例曲目`` → ``示例曲目``."""
+    """Derive short song label: ``Artist - Title`` → ``Title``."""
     stem = Path(title_or_path).stem if _looks_like_audio_file(title_or_path) else title_or_path
     stem = (stem or "").strip()
     if " - " in stem:
@@ -177,27 +177,27 @@ def song_display_name(title_or_path: str) -> str:
 
 
 def parse_source_and_voice(text: str) -> dict[str, str]:
-    """Parse NL like 「使用示例歌手声音翻唱 示例歌手 - 示例曲目.mp3」 → input/source + voice_id."""
+    """Parse NL like 「使用<voice>声音翻唱 <artist> - <title>.mp3」 → input/source + voice_id."""
     t = (text or "").strip()
     if not t:
         return {}
 
     patterns = [
-        # ExampleVoiceB版本翻唱…
+        # <voice>版本翻唱…
         re.compile(
             r"(?P<voice>[\w\u4e00-\u9fff]+)\s*版本翻唱\s*(?P<source>.+)$"
         ),
-        # 使用/用 示例歌手声音翻唱 …
+        # 使用/用 <voice>声音翻唱 …
         re.compile(
             r"(?:用|使用)(?P<voice>.+?)(?:的)?(?:声音|音色)翻唱\s*(?P<source>.+)$"
         ),
-        # 翻唱…，用示例歌手声音
+        # 翻唱…，用<voice>声音
         re.compile(
             r"翻唱\s*(?P<source>.+?)(?:，|,|；|;)\s*(?:用|使用)(?P<voice>.+?)(?:的)?(?:声音|音色)?$"
         ),
-        # 用/使用 ExampleVoiceB翻唱这首歌 / 用示例歌手翻唱晴天
+        # 用/使用 <voice>翻唱这首歌 / 用<voice>翻唱<歌名>
         re.compile(r"(?:用|使用)(?P<voice>.+?)翻唱\s*(?P<source>.+)$"),
-        # 翻唱周杰伦晴天 / 翻唱晴天（无音色 → 仅 source，进入搜索）
+        # 翻唱<歌名>（无音色 → 仅 source，进入搜索）
         re.compile(r"^翻唱\s*(?P<source>.+)$"),
     ]
 
@@ -241,7 +241,7 @@ def extract_cover_params_from_utterances(utterances: list[str]) -> dict[str, Any
             input_path = combo["input"]
         if combo.get("action"):
             action = combo["action"]
-        # Bare voice mention: 「ExampleVoiceB版本」「用example_voice」
+        # Bare voice mention: 「<voice>版本」「用<voice>」
         bare = re.sub(
             r"^(?:用|使用)\s*",
             "",
