@@ -1,104 +1,37 @@
-# 免声明 / Disclaimer
+# Disclaimer
 
-**最后更新：2026-07-28（AIVOICE v1.0）**
+Last updated: 2026-09-17.
 
-本文件是本仓库关于示例资产、音色模型、歌曲翻唱与软件使用的正式说明。  
-使用本仓库代码、示例模型、预览音频或衍生成品，即视为你已阅读并同意以下内容。
+AIVOICE / AI Cover Studio is a local engineering and research tool. It is not a licensed music distribution service, voice pack marketplace, or guarantee that any generated audio is lawful to publish.
 
----
+## Code License Scope
 
-## 1. 软件性质
+The repository software code is licensed under the MIT License. That license does not grant rights to:
 
-AIVOICE / AI Cover Studio 是面向**个人学习、技术研究与自用演示**的本地工具，不是面向公众的商业内容发行平台，也不提供任何「可商用音色」或「已获授权歌库」的保证。
+- third-party model weights;
+- training datasets;
+- songs, lyrics, instrumentals, or recordings;
+- artist names, likenesses, voices, or trademarks;
+- third-party tools and services called by the project.
 
-- 仓库代码以 **MIT License** 授权；**MIT 仅覆盖本仓库作者编写的软件代码**。
-- 第三方模型权重、训练数据、歌曲原曲、歌词、专辑美术、人物肖像与声音形象等，**版权与邻接权仍归原权利人**，不会因为本仓库采用 MIT 而变为可自由商用。
+Those assets remain governed by their own owners, licenses, and terms.
 
----
+## Models And Voices
 
-## 2. 示例音色（如「示例歌手 / example_voice」）
+Use voice data and model weights only when you have the right to train, use, and redistribute them. Do not present a model as official, authorized, or commercial unless you can prove that status.
 
-仓库中的示例音色权重（例如 `examples/voices/example_voice/`）及基于其生成的预览音频（例如 `examples/demo/eason_preview.mp3`）：
+Public examples in this repository should be limited to rights-cleared assets. If an asset's redistribution rights cannot be verified, keep it local and do not use it as a public demo.
 
-1. **仅用于演示技术链路是否跑通**（UVR → SVC → 导出 / 飞书推送等），方便开发者理解配置与接入方式。  
-2. **不构成**对任何真实艺人、声线、姓名或形象的授权、代言或官方合作。  
-3. **不得**用于：  
-   - 商业发行、付费分发、广告配音、直播带货话术、游戏/影视商用素材；  
-   - 对外宣称「官方音色」「正版授权」或误导他人以为已获权利人许可；  
-   - 深度伪造、诈骗、诽谤、骚扰，或任何违法、侵权用途。  
-4. 若你计划长期使用或公开展示，**请替换为你本人拥有合法权利的音色模型**（例如你本人授权录制并训练的声音）。
+## Music And Generated Audio
 
-示例预览音频（`examples/demo/eason_preview.mp3`）截取自本机技术验证用的 example_voice 翻唱成品片段，**不是**对商业歌曲的官方翻唱发行物，亦不得据此主张任何发行或授权权利。
+Downloading, transforming, covering, or distributing music may require licenses from songwriters, publishers, labels, performers, or other rights holders. You are responsible for checking the laws and platform rules that apply to your use.
 
----
+Do not publicly distribute generated covers unless you have the required rights.
 
-## 3. 歌曲与音乐版权
+## Privacy And Secrets
 
-你通过本软件搜索、下载、上传或翻唱的任何歌曲，版权通常归属于词曲作者、唱片公司、表演者等权利人。
+AIVOICE is designed for local processing, but integrations may send metadata or files to external services such as Feishu or online source providers. Keep app secrets, tokens, cookies, private audio, logs, and personal data out of public issues and commits.
 
-1. 本软件**不提供**歌曲版权许可，也不保证任何在线音源来源合法。  
-2. 你应自行确认：在你所在司法辖区，对目标曲目进行下载、改编、AI 翻唱、私密试听或公开传播是否合法。  
-3. **未经权利人许可**，请勿将翻唱成品上传到公开平台、用于商演、销售或大规模传播。  
-4. 仓库内 `examples/demo/eason_preview.mp3` 为技术验证用翻唱**片段**；请勿将其与正式发行混淆。旧的合成测试音 `sample_input.mp3` 已移除。
+## No Warranty
 
----
-
-## 4. 训练与自建模型
-
-文档（如 `docs/MODEL_GUIDE.md`）中的训练说明仅为技术参考：
-
-1. 训练数据（干声、歌曲切片等）必须来自你有权使用的素材；**不得**在未授权情况下使用他人录音批量训练后公开传播。  
-2. 将自训模型接入本软件、产生成品并分发的全部法律责任，由**你本人**承担。  
-3. 本项目作者不对训练效果、音色相似度、破音、伪影或「像谁」等主观结果作任何保证。
-
----
-
-## 5. 第三方组件与运行环境
-
-本软件依赖或可能调用的第三方项目与资源包括但不限于：so-vits-svc、UVR / MDX 类分离模型、ffmpeg、Hermes / 飞书开放平台、各类 Python 依赖等。
-
-1. 它们各自遵循**自己的许可证与使用条款**；你有责任遵守。  
-2. 模型文件体积大、推理依赖 GPU/CUDA 环境；**仓库不保证**在所有硬件上可运行，也不提供企业级 SLA。  
-3. 飞书消息、上传文件等行为还须遵守飞书 / 字节跳动相关开放平台协议与你所在组织的合规要求。
-
----
-
-## 6. 隐私与数据
-
-1. 默认设计为**本机处理**；任务队列、中间文件、成品通常落在本机目录（如 `jobs/`、`workdir/`、`outputs/`）。  
-2. 若你启用飞书推送、在线搜歌、或将日志发给第三方，可能离开本机——请自行评估隐私与合规风险。  
-3. 请勿在 issue、公开仓库或聊天中粘贴 **App Secret、Token、Cookie** 等凭证。
-
----
-
-## 7. 无担保与责任限制
-
-在适用法律允许的最大范围内：
-
-1. 本软件按 **「现状（AS IS）」** 提供，**不提供**适销性、特定用途适用性、不侵权等明示或默示担保。  
-2. 因使用或无法使用本软件而导致的任何直接、间接、附带、惩戒性损害（含数据丢失、版权纠纷、账号封禁、设备损坏等），项目作者与贡献者**不承担责任**。  
-3. 你使用本软件所产生的全部输出（含音频、日志、消息）的**合规审查义务在你**，不在项目维护者。
-
-若你所在地区法律不允许上述部分免责条款，则以该地区强制性规定为准，其余条款仍然有效。
-
----
-
-## 8. 你的义务（摘要）
-
-在使用本仓库前，请确保你能够做到：
-
-- [ ] 仅为个人学习 / 研究 / 自用，或已取得所需全部授权  
-- [ ] 不将示例艺人音色用于商用或公开误导性展示  
-- [ ] 不未授权传播受版权保护的歌曲翻唱  
-- [ ] 自行保管密钥与本机数据，不对外泄露  
-- [ ] 遵守当地法律与第三方服务条款  
-
-如不同意以上任一条款，请**立即停止使用**本仓库，并删除已下载的示例模型与预览文件。
-
----
-
-## 9. 联系与更正
-
-若权利人认为仓库中的示例资产不当，请通过 GitHub Issues 或仓库主页公示渠道联系维护者，我们将在合理范围内配合下架或替换示例文件。
-
-仓库：<https://github.com/beyoda/ai-cover-studio>
+The software is provided "as is", without warranty of any kind. The maintainers are not responsible for copyright disputes, account restrictions, data loss, hardware/runtime incompatibility, or generated output quality.

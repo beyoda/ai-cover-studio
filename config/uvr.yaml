@@ -1,7 +1,18 @@
-﻿uvr:
+# Vocal separation wiring.
+#
+# Placeholders supported by src/aivoice_studio/modules/uvr/separator.py:
+#   {python}      interpreter running AIVOICE (sys.executable)
+#   {input}       input audio path
+#   {output_dir}  separation output directory
+#   {model_name}  value of uvr.model_name below
+#
+# The command runs with the repository root as its working directory, so the
+# relative paths below are portable. No machine-specific absolute path is
+# required, and no UVR model is shipped by this repository: place a model you
+# are allowed to use at models/uvr/ (git-ignored) before running in real mode.
+uvr:
   enabled: true
-  # DirectML GPU wrapper (CLI has no --use_directml). Falls back path: audio-separator without GPU.
-  command: "<repo-root>\\.venv\\Scripts\\python.exe <repo-root>\\scripts\\uvr_directml.py {input} --output_dir {output_dir} --model_filename {model_name} --model_file_dir <repo-root>\\models\\uvr"
+  command: '{python} scripts/uvr_directml.py {input} --output_dir {output_dir} --model_filename {model_name} --model_file_dir models/uvr'
   model_name: "UVR_MDXNET_Main.onnx"
   vocal_glob: "*Vocals*.*"
   instrumental_glob: "*Instrumental*.*"

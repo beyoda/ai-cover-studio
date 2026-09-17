@@ -24,8 +24,8 @@ def _request(**overrides) -> CoverRequest:
         f0_method="rmvpe",
         export_mp3=True,
         accompaniment=r"D:\songs\inst.wav",
-        workdir=r"<repo-root>\workdir",
-        output_dir=r"<repo-root>\outputs",
+        workdir=r"D:\demo\workdir",
+        output_dir=r"D:\demo\outputs",
         client="test",
     )
     base.update(overrides)
@@ -85,8 +85,8 @@ class TestCoverRequestToJobContextMapping:
         req = _request(workdir=None, output_dir=None)
         config = {
             "runtime": {
-                "workdir": r"<repo-root>\workdir",
-                "output_dir": r"<repo-root>\outputs",
+                "workdir": r"D:\demo\workdir",
+                "output_dir": r"D:\demo\outputs",
             }
         }
         with patch(
@@ -96,8 +96,8 @@ class TestCoverRequestToJobContextMapping:
             adapter.run(req, job_id="jid000000001")
 
         job: PipelineJobContext = captured["job"]
-        assert job.workdir == Path(r"<repo-root>\workdir")
-        assert job.output_dir == Path(r"<repo-root>\outputs")
+        assert job.workdir == Path(r"D:\demo\workdir")
+        assert job.output_dir == Path(r"D:\demo\outputs")
 
 
 class TestJobResultToCoverResultMapping:

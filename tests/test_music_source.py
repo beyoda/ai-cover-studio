@@ -1,13 +1,20 @@
-"""Music Source layer tests (LocalFile / GDStudio search-choice / Skill params)."""
+"""Music Source layer tests (LocalFile / GDStudio search-choice / Skill params).
+
+Voice-related assertions use a synthetic registry in ``tmp_path`` so the suite
+does not depend on any particular voice, on celebrity models, or on files that
+only exist on the maintainer's machine.
+"""
 
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
 import pytest
 
+import aivoice_studio.cover.voice_registry as voice_registry_module
 from aivoice_studio.cover.domain.request import CoverRequest
 from aivoice_studio.cover.music_source import (
     AudioAsset,
@@ -18,7 +25,7 @@ from aivoice_studio.cover.music_source import (
     SongCandidate,
     resolve_to_audio_asset,
 )
-from aivoice_studio.cover.voice_registry import get_voice_registry
+from aivoice_studio.cover.voice_registry import VoiceRegistry, get_voice_registry
 from aivoice_studio.cover.voice_request import build_cover_request_for_voice
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +42,32 @@ def _load_param_parse():
         sys.path.insert(0, src)
     spec.loader.exec_module(mod)
     return mod
+
+
+def _synthetic_registry(models_dir: Path) -> VoiceRegistry:
+    """One enabled voice named ``alpha`` with a vec768l12 config."""
+    models_dir.mkdir(parents=True, exist_ok=True)
+    (models_dir / "G_10000.pth").write_bytes(b"")
+    (models_dir / "config.json").write_text(
+        json.dumps({"model": {"speech_encoder": "vec768l12", "ssl_dim": 768}}),
+        encoding="utf-8",
+    )
+    return VoiceRegistry.from_dict(
+        {
+            "models_dir": str(models_dir),
+            "default_voice_id": "alpha",
+            "voices": {
+                "alpha": {
+                    "display_name": "Alpha Voice",
+                    "description": "Synthetic voice",
+                    "checkpoint": "G_10000.pth",
+                    "config": "config.json",
+                    "enabled": True,
+                    "aliases": ["alpha"],
+                }
+            },
+        }
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -143,25 +176,32 @@ def test_track_id_resolve(monkeypatch, tmp_path: Path):
     assert Path(asset.path).is_file()
 
 
-def test_voice_id_plus_source_combo(sample_mp3: Path):
+def test_voice_id_plus_source_combo(
+    sample_mp3: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    registry = _synthetic_registry(tmp_path / "logs")
+    monkeypatch.setattr(
+        voice_registry_module, "_DEFAULT_REGISTRY", registry, raising=False
+    )
+
     pp = _load_param_parse()
-    parsed = pp.parse_source_and_voice("用示例歌手声音翻唱晴天")
-    assert parsed.get("voice_id") == "example_voice"
+    parsed = pp.parse_source_and_voice("用Alpha Voice声音翻唱晴天")
+    assert parsed.get("voice_id") == "alpha"
     assert parsed.get("source") == "晴天"
     assert parsed.get("source_query") == "晴天"
 
-    multi = pp.extract_cover_params_from_utterances(["用示例歌手声音翻唱晴天"])
-    assert multi["voice_id"] == "example_voice"
+    multi = pp.extract_cover_params_from_utterances(["用Alpha Voice声音翻唱晴天"])
+    assert multi["voice_id"] == "alpha"
     assert multi["source"] == "晴天"
 
     audio = resolve_to_audio_asset(source=str(sample_mp3))
     req, asset = build_cover_request_for_voice(
         input_audio=audio.path,
         voice_id=multi["voice_id"],
-        registry=get_voice_registry(),
+        registry=registry,
     )
     assert isinstance(req, CoverRequest)
-    assert asset.voice_id == "example_voice"
+    assert asset.voice_id == "alpha"
     assert Path(req.input_audio).is_file()
 
 
@@ -176,15 +216,13 @@ def test_legacy_input_path_still_works(sample_mp3: Path):
     assert Path(dual.path).resolve() == Path(sample_mp3).resolve()
 
 
-def test_cos_uses_configcos_with_vec768():
-    import json
-    from pathlib import Path
-
-    reg = get_voice_registry()
-    asset = reg.get_voice("example_voice_b")
-    ckpt, cfg_path = reg.require_paths(asset)
-    assert cfg_path.name == "configcos.json"
-    assert ckpt.name == "G_16000.pth"
+def test_registered_voice_binds_the_config_declared_for_it(tmp_path: Path) -> None:
+    """The registry must hand SVC the exact checkpoint/config pair declared, not a guess."""
+    registry = _synthetic_registry(tmp_path / "logs")
+    asset = registry.get_voice("alpha")
+    ckpt, cfg_path = registry.require_paths(asset)
+    assert ckpt.name == "G_10000.pth"
+    assert cfg_path.name == "config.json"
     cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
     assert cfg["model"]["speech_encoder"] == "vec768l12"
     assert cfg["model"]["ssl_dim"] == 768

@@ -1,3 +1,0 @@
-[console_scripts]
-aivoice = aivoice_studio.cli:main
-aivoice-gui = aivoice_studio.app:main

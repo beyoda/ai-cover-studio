@@ -1,5 +1,5 @@
 # examples/demo
 
-**在线试听（约 25 秒）**：[eason_preview.mp3](eason_preview.mp3)
+Put only rights-cleared generated preview clips here.
 
-来源：本机已完成的 example_voice《示例曲目》翻唱成品截取，仅供音色展示。详见 [docs/DISCLAIMER.md](../../docs/DISCLAIMER.md)。
+No public demo clip is currently verified for redistribution. Do not add covers of copyrighted songs or voice outputs from third-party/celebrity models unless the required rights are documented.

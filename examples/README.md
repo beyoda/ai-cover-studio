@@ -1,33 +1,16 @@
-# Examples (v1.0)
+# Examples
 
-## Online demo (play in browser) — ~25 seconds
+This directory is reserved for examples that can be publicly redistributed.
 
-**Open this file (not anything under `audio/`):**
+At the moment, the repository does not provide a verified public demo audio clip, voice checkpoint, or UVR model with documented redistribution rights. Use local assets that you are authorized to use, or contribute replacements with clear license/provenance notes.
 
-https://github.com/beyoda/ai-cover-studio/blob/main/examples/demo/eason_preview.mp3
+Recommended structure:
 
-It is a short clip from a completed **example_voice** cover of《示例曲目》.  
-If you hear ~12s of tone/noise, you opened the old synthetic test file (removed). Hard-refresh or use the link above.
+| Path | Purpose |
+| --- | --- |
+| `audio/` | Rights-cleared input audio |
+| `demo/` | Rights-cleared generated preview clips |
+| `voices/<voice_id>/` | Redistributable voice checkpoint + config |
+| `models/uvr/` | Redistributable UVR model files |
 
-Model requirements & training: [docs/MODEL_GUIDE.md](../docs/MODEL_GUIDE.md)
-
-| Path | What |
-|------|------|
-| `demo/eason_preview.mp3` | **Playable showcase** (~25s example_voice clip, Git LFS) |
-| `voices/example_voice/G_27200.pth` | Example SVC checkpoint (Git LFS, ~599MB) |
-| `voices/example_voice/config1.json` | Matching config |
-| `models/uvr/UVR_MDXNET_Main.onnx` | Example UVR model (Git LFS, ~64MB) |
-
-## Disclaimer
-
-**Full text (Chinese):** [docs/DISCLAIMER.md](../docs/DISCLAIMER.md)
-
-- The `example_voice` checkpoint and `demo/eason_preview.mp3` are **technical demos only**. They are **not** an official license or commercial voice pack.
-- Do **not** use example voices or song covers for commercial distribution without proper rights.
-- Replace example assets with voices and audio you are allowed to use.
-
-## Install into runtime paths
-
-```powershell
-.\scripts\setup_tools.ps1
-```
+Before adding files here, update [docs/DISCLAIMER.md](../docs/DISCLAIMER.md) and [docs/MODEL_GUIDE.md](../docs/MODEL_GUIDE.md) if the asset changes setup or legal guidance.

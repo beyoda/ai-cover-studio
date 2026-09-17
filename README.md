@@ -1,153 +1,201 @@
-# AIVOICE / AI Cover Studio v1.0
+# AIVOICE / AI Cover Studio
 
-Windows 本地 **AI 翻唱服务**：用飞书说话点歌，本机自动制作并回传 MP3。
+Windows-first local AI cover pipeline: natural-language requests are resolved into local audio jobs, processed through UVR/SVC, and delivered as finished audio.
+
+> [!IMPORTANT]
+> AIVOICE is an engineering and research project, not a licensed music distribution service. The MIT license in this repository applies to software code only. It does not grant rights to third-party songs, recordings, model weights, voice likenesses, datasets, trademarks, or bundled tools.
 
 ```text
-飞书 → Hermes → 入队 → Worker → UVR/SVC → 飞书收到成品
+Chat / Hermes Skill
+        |
+Music source + Voice Registry
+        |
+File-backed job queue / worker
+        |
+UVR separation -> SVC conversion -> mix / export
+        |
+Outbox / notifier -> finished audio
 ```
 
-仓库：<https://github.com/beyoda/ai-cover-studio>  
-版本：`v1.0.0` Stable（见 [CHANGELOG.md](CHANGELOG.md)）
+<p align="center">
+  <img src="docs/assets/pipeline.svg" width="900" alt="AIVOICE local audio pipeline">
+</p>
 
----
+## Current Status
 
-## 1. Clone（记得拉 LFS）
+`v1.0.0` is the first stable personal-use release. The maintainer has exercised the local GPU pipeline and async delivery path end to end, but the public repository is still being prepared for broader open-source reproducibility.
+
+Known publication constraints:
+
+- This repository ships **code only**: no voice checkpoint, no UVR weight, no song, and no generated audio.
+- Public demo assets must be replaced with materials that have clear redistribution rights.
+- No verified runtime UI screenshots are currently available in this repository. Needed screenshots: desktop main window, job queue/progress, and a completed output or notification view.
+- Large CUDA/SVC runtime environments are intentionally not stored in Git.
+- The bundled Hermes skill under `hermes_skill/` is a reference integration written for one personal deployment. It expects the maintainer's own voice ids and local runtime layout, so adapt it (or ignore it and use the GUI/CLI) before reusing it.
+
+## Highlights
+
+| Capability | Current implementation |
+| --- | --- |
+| Natural-language requests | Hermes skill and Feishu entry path |
+| Music input | Local file, URL, and source adapter path |
+| Voice selection | `config/voices.json` registry, not hard-coded in the skill |
+| Vocal separation | UVR configuration path |
+| Voice conversion | so-vits-svc-compatible checkpoint/config path |
+| Long-running jobs | File-backed queue plus on-demand worker |
+| Delivery | Outbox and notifier path |
+| Desktop use | PyQt GUI entry remains available |
+
+## Quick Start
+
+Requirements:
+
+- Windows
+- Python 3.10+
+- Git (Git LFS only matters if you contribute example assets)
+- ffmpeg on `PATH`
+- A compatible local GPU/runtime for the UVR and SVC configuration you choose
+- Your own rights-cleared voice model and UVR model; none are bundled
 
 ```powershell
-git lfs install
 git clone https://github.com/beyoda/ai-cover-studio.git
 cd ai-cover-studio
-git checkout v1.0.0
-git lfs pull
-```
 
-仓库包含：
-
-- 代码 + Hermes Skill
-- **示例音色**：示例歌手 / `example_voice`（`examples/voices/example_voice/`，Git LFS）
-- **在线试听（约 25 秒）**：打开 → [examples/demo/eason_preview.mp3](https://github.com/beyoda/ai-cover-studio/blob/main/examples/demo/eason_preview.mp3)（example_voice《示例曲目》翻唱片段，**不是** 12 秒测试音）
-- **示例 UVR 模型**（`examples/models/uvr/`，Git LFS）
-
-仓库**不含**：完整 `tools/so-vits-svc/workenv`（约 5GB CUDA 环境）。用一键脚本安装/拷贝。
-
-**什么样的模型能用 / 怎么训练**：见 [docs/MODEL_GUIDE.md](docs/MODEL_GUIDE.md)。
-**免责声明**：见 [docs/DISCLAIMER.md](docs/DISCLAIMER.md)。
-
----
-
-## 2. 一键安装工具与示例模型
-
-前提：已装 [Git LFS](https://git-lfs.com)、[ffmpeg](https://ffmpeg.org/download.html)（在 PATH）。
-
-```powershell
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -e .
+```
 
-# 一键：拉 LFS、准备 so-vits-svc 源码、安装 example_voice+UVR 到运行目录、改配置路径
+Then check what is still missing:
+
+```powershell
 .\scripts\setup_tools.ps1
 ```
 
-若提示缺少 `tools\so-vits-svc\workenv\python.exe`：
+`setup_tools.ps1` is **diagnostic by default**. It downloads nothing, copies no model into any runtime path, and never rewrites your configuration files. It reports each missing component with the next step, and `-Strict` exits non-zero when something required is absent, so it cannot claim success for an environment that is not runnable. Add `-CloneSvcSource` if you also want it to clone the upstream so-vits-svc source tree into `tools\so-vits-svc`.
 
-- 从你的备份盘拷贝整个 `workenv` 到 `tools\so-vits-svc\workenv`，或  
-- 按 so-vits-svc 文档自建 CUDA Python 环境后再跑翻唱。
+If `tools\so-vits-svc\workenv\python.exe` is missing, create or copy a local CUDA/SVC environment there, or point `svc.python` in `config\svc.yaml` at your own interpreter. The repository does not ship the multi-gigabyte runtime.
 
----
+## Bring Your Own Models
 
-## 3. 日常怎么用（推荐：飞书）
+Nothing model-related is distributed with this repository. To run the pipeline in real (non-mock) mode you supply:
 
-### 启动 Gateway（常驻）
+| Component | Where it goes | Notes |
+| --- | --- | --- |
+| Voice checkpoint + matching config | under `models_dir` from `config/voices.json` (default `tools/so-vits-svc/logs/44k`) | so-vits-svc 4.x generator checkpoint such as `G_10000.pth` |
+| Vocal separation model | `models/uvr/` (git-ignored) | filename must match `uvr.model_name` in `config/uvr.yaml` |
+| so-vits-svc runtime | `tools/so-vits-svc/workenv/` (git-ignored) | CUDA Python environment; see `config/svc.yaml` |
+| Input audio | anywhere you like | you must hold the rights to the recording |
+
+`config/svc.yaml` and `config/uvr.yaml` ship with portable relative paths and are meant to be edited locally. Please do not commit machine-specific absolute paths; see [`ROADMAP.md`](ROADMAP.md).
+
+## Running
+
+Start the Hermes gateway:
 
 ```powershell
 hermes gateway run
 ```
 
-### 对机器人说（示例歌手示例）
-
-```text
-用示例歌手声音翻唱晴天
-```
-
-或：
-
-```text
-用 example_voice 翻唱花洒
-用 example_voice 翻唱晴天，升一个 key
-```
-
-有多版本时回复序号，例如 `1`。  
-先收到「已入队」，大约 1 分钟后收到完成通知 + `cover.mp3`。
-
-试听成品音色（展示用，非输入文件）：
-
-```text
-https://github.com/beyoda/ai-cover-studio/blob/main/examples/demo/eason_preview.mp3
-```
-
----
-
-## 4. Worker 要不要手动开？
-
-一般不用。入队后会自动 kick，队列做完退出。
-
-手动排空：
+Drain queued work manually:
 
 ```powershell
 $env:PYTHONPATH="src"
 .\.venv\Scripts\python.exe -m aivoice_studio.worker --drain
 ```
 
----
-
-## 5. 备选：桌面 GUI
+Launch the desktop GUI:
 
 ```powershell
 .\AI Cover Studio.bat
 ```
 
-或：
+or:
 
 ```powershell
 $env:PYTHONPATH="src"
 .\.venv\Scripts\python.exe -m aivoice_studio
 ```
 
----
+## Voice Registry
 
-## 6. 目录速查
+The source of truth for compatible voices is [`config/voices.json`](config/voices.json). Each entry maps a friendly `voice_id` and aliases to a so-vits-svc generator checkpoint and matching configuration file under `models_dir`.
 
-| 路径 | 作用 |
-|------|------|
-| `examples/demo/eason_preview.mp3` | **example_voice 在线试听预览** |
-| `examples/` | 示例音色 / UVR / 测试 MP3（见 [examples/README.md](examples/README.md)） |
-| `docs/MODEL_GUIDE.md` | 可用模型条件 + 训练流程 |
-| `docs/DISCLAIMER.md` | 详细免责声明（音色 / 歌曲 / 训练 / 责任） |
-| `scripts/setup_tools.ps1` | 一键安装到运行目录 |
-| `hermes_skill/media/aivoice-cover/` | 飞书 Skill |
-| `src/aivoice_studio/worker/` | 任务 Worker |
-| `src/aivoice_studio/notifier/` | 飞书推送 |
-| `outputs/{job_id}/cover.mp3` | 成品 |
+The shipped file is an empty template: one `example_voice` entry with `"enabled": false` and `default_voice_id: null`. Nothing resolves until you register a voice you are authorized to use.
 
-冻结说明：[AIVOICE_V1.0_RELEASE.md](AIVOICE_V1.0_RELEASE.md)
+Minimal entry (also documented in [docs/MODEL_GUIDE.md](docs/MODEL_GUIDE.md)):
 
----
+```json
+{
+  "my_voice": {
+    "display_name": "My Voice",
+    "description": "Authorized demo voice",
+    "checkpoint": "G_10000.pth",
+    "config": "config.json",
+    "enabled": true,
+    "metadata": {
+      "language": "zh",
+      "style": "pop"
+    },
+    "aliases": ["my_voice", "My Voice"]
+  }
+}
+```
 
-## 7. 免责声明
+Verified behavior from the current code:
 
-**完整条款**：[docs/DISCLAIMER.md](docs/DISCLAIMER.md)（请使用前阅读）。要点如下：
+- `VoiceRegistry.load()` reads `config/voices.json` by default.
+- `models_dir` defaults to `tools/so-vits-svc/logs/44k` when omitted.
+- Lookup accepts `voice_id`, display name, checkpoint stem, and aliases.
+- `voice_id` takes priority over legacy `model_name` in cover requests.
+- Disabled entries are hidden from listings and cannot be resolved.
+- The Hermes skill reads the registry when listing voices.
 
-1. **软件定位**：个人学习 / 技术研究 / 自用演示工具；**不是**已获商用授权的发行平台。  
-2. **代码许可**：本仓库代码为 **MIT**；**不覆盖**第三方模型、歌曲、艺人声音与形象等权利。  
-3. **示例音色（示例歌手 / example_voice）及预览 MP3**：仅用于证明 UVR→SVC→导出链路可跑通；**不代表**官方授权或合作；**禁止**商用、广告、公开伪冒「正版音色」及违法用途。请尽快替换为你有权使用的音色。  
-4. **歌曲版权**：在线搜歌 / 翻唱 / 传播的合规责任在**使用者**；未经许可勿公开分发翻唱成品。在线试听预览仅为技术展示片段。  
-5. **训练模型**：须使用你有权的干声数据；自训模型与成品分发的法律责任自负。  
-6. **无担保**：软件按「现状」提供；作者不对版权纠纷、账号封禁、硬件兼容或生成质量负责。
+See [docs/MODEL_GUIDE.md](docs/MODEL_GUIDE.md) for the verified model format and asset replacement steps.
 
-不同意上述内容请勿使用本仓库，并删除已下载的示例模型与预览文件。
+## Repository Map
 
----
+| Path | Purpose |
+| --- | --- |
+| `src/aivoice_studio/` | Core application code |
+| `src/aivoice_studio/worker/` | Async job execution |
+| `src/aivoice_studio/notifier/` | Completion delivery |
+| `hermes_skill/media/aivoice-cover/` | Hermes/Feishu skill integration (personal deployment reference) |
+| `config/` | Runtime and voice configuration |
+| `scripts/` | Setup, diagnostics, and helper scripts |
+| `docs/` | Model, legal, and architecture documentation |
+| `examples/` | Placeholder docs for user-supplied authorized examples |
+| `tests/` | Unit, contract, and configuration-consistency tests |
+
+## Demo Assets
+
+No copyrighted song, celebrity voice model, or third-party UVR/SVC weight is tracked in this repository. [`examples/`](examples/README.md) holds documentation only; the corresponding `.pth`, `.onnx`, `.mp3`, and `.wav` paths are git-ignored, and `tests/test_voice_registry_integration.py` fails if any such file is ever committed.
+
+Acceptable replacements:
+
+- a self-recorded or contributor-authorized voice model;
+- synthetic or public-domain source audio with clear provenance;
+- model weights whose license explicitly allows redistribution in this repo;
+- short real UI screenshots captured from a local run, with private paths and account data removed.
+
+## Tests
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest
+```
+
+The suite runs without any model, GPU, or network access. It covers the Voice Registry, the cover-request adapter, the worker, and a set of configuration-consistency guards (portable paths, no silent downloads, no committed model assets, README links).
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md).
+
+## Contributing
+
+Bug reports, portability fixes, documentation improvements, reproducibility work, and rights-cleared examples are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+
+For security-sensitive reports, follow [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT（仅限本仓库软件代码）。第三方模型 / 歌曲 / 音色等权利归原权利人，详见 [docs/DISCLAIMER.md](docs/DISCLAIMER.md)。
+Repository software code is licensed under the MIT License; see [LICENSE](LICENSE). This license does not apply to third-party models, datasets, songs, recordings, voices, likenesses, trademarks, or external tools. See [docs/DISCLAIMER.md](docs/DISCLAIMER.md).

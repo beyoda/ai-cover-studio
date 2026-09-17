@@ -53,3 +53,25 @@ v1.0 起默认**不继续堆功能**。体验与质量优化走 v1.1+；Athena /
 ## Unreleased
 
 （冻结后新改动记在此处，直至下一版本号。）
+
+### Changed — 开源发布准备（Open-source readiness）
+
+- **移除全部第三方资产**：`examples/voices/example_voice/G_27200.pth`（628 MB）、`examples/models/uvr/UVR_MDXNET_Main.onnx`（67 MB）、`examples/demo/eason_preview.mp3` 不再随仓库分发；对应路径已加入 `.gitignore`，本地原件未受影响。仓库现在只发布代码。
+- **`scripts/setup_tools.ps1` 重写**：默认只做**诊断**，不再 `git lfs pull`、不再把示例模型复制进运行时目录、不再覆盖 `config\svc.yaml`。缺组件时逐项列出下一步并支持 `-Strict` 以非零码退出，不再虚报安装成功。克隆 so-vits-svc 源码改为显式 `-CloneSvcSource`。
+- **配置去除个人机器路径**：`config/svc.yaml`、`config/uvr.yaml` 改为相对路径；`config/uvr.yaml` 新增 `{python}` 占位符（由 `UVRService` 用 `sys.executable` 填充），UVR 子进程工作目录固定为仓库根。
+- **`config/voices.json` 改为空模板**：移除了具体艺人音色与 `G_27200`/`G_16000` 硬编码，改为一条 `example_voice` + `"enabled": false`，`default_voice_id: null`。
+- **`config/svc.yaml` 移除 `default_model`**，不再默认指向某个未授权 checkpoint。
+- **`AI Cover Studio.bat` 可移植化**：改用 `%~dp0`，不再写死本机绝对路径；清理临时文件需输入 `YES` 确认。
+- **补齐缺失源码包**：`src/aivoice_studio/models/`（`__init__.py`、`results.py`）此前从未提交，导致全新克隆 `import aivoice_studio` 直接 `ModuleNotFoundError`；现已纳入版本控制。
+- **移除构建产物**：`src/aivoice_studio.egg-info/` 不再跟踪，`*.egg-info/` 加入 `.gitignore`。
+- **移除生成的 profiling 产物**：`profiling_report.md`、`issues.md` 由 `src/aivoice_studio/profiling/report.py` 在每次插桩运行时重写，之前被提交且内容含个人绝对路径；现已取消跟踪并加入 `.gitignore`（与已有的 `profiling.json` / `metrics.csv` / `commands.log` 一致）。
+- **补齐依赖声明**：`pyproject.toml` 的 `dependencies` 缺少 `requests`（`aivoice_studio.notifier` 在模块级导入），导致全新克隆 `pytest` 直接收集失败；现已补上，并把 `flask` / `yt-dlp` / `pillow` / `psutil` / `ffmpeg-python` 归入可选 extras。
+- **测试可在全新克隆运行**：Voice Registry 与 Music Source 相关测试改为使用临时目录中的合成注册表，不再依赖特定艺人音色、本机 `.venv` 路径或真实模型文件；新增 `tests/test_install_consistency.py` 作为配置一致性护栏（可移植路径、不下载、不覆盖配置、无被跟踪的模型/音频二进制、无未声明依赖、无被跟踪的生成物、README 链接可达）。
+- **文档更新**：README 增补 Bring Your Own Models / Tests 章节，修正安装步骤与实际脚本行为；`docs/MODEL_GUIDE.md` 补充 UVR 模型位置、环境自检与模板说明。
+
+### Remaining (not in this change)
+
+- Git 历史与 LFS 远端仍保有旧资产的 blob；彻底清除需要重写历史与强制推送（待确认）。
+- `hermes_skill/` 仍指向个人部署（固定本机绝对路径、个人音色 id），需要单独一次脱敏。
+- `src/aivoice_studio/server/*`、`ui/main_window.py`、`scripts/run_cli.ps1` 等处仍有示例模型名兜底字符串。
+- 根目录若干内部设计/测试报告（`AIVOICE_*_REPORT.md`、`hermes_*_report.md`、`aivoice_v1.3_*.md`、`post_migration_profiling.md` 等）仍含本机绝对路径，属于历史文档，建议单独一轮清理或移入 `docs/internal/`。

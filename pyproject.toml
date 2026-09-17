@@ -8,9 +8,21 @@ version = "0.1.0"
 description = "Windows local AI cover pipeline with PyQt UI"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["PyQt6>=6.6", "PyYAML>=6.0", "rich>=13.7"]
+dependencies = [
+    "PyQt6>=6.6",
+    "PyYAML>=6.0",
+    "rich>=13.7",
+    "requests>=2.31",
+]
 
 [project.optional-dependencies]
+# Web/Feishu server entry point (aivoice_studio.server).
+server = ["flask>=3.0"]
+# URL music sources and cover art helpers; both are imported lazily.
+download = ["yt-dlp>=2024.7.16"]
+images = ["pillow>=10.0"]
+# Profiling sampler and media probing; imported lazily.
+diagnostics = ["psutil>=5.9", "ffmpeg-python>=0.2.0"]
 dev = ["pytest>=8.0", "ruff>=0.5", "pyinstaller>=6.6"]
 
 [project.scripts]
