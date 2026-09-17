@@ -39,7 +39,10 @@ PORTABLE_FILES = (
 WINDOWS_ABSOLUTE = re.compile(r"\b[A-Za-z]:[\\/]")
 # A user-profile path leaks the machine owner's name even when the drive differs.
 USER_PROFILE_PATH = re.compile(r"[\\/]Users[\\/]", re.IGNORECASE)
-CELEBRITY_TOKENS = ("示例歌手", "示例歌手", "example_voice", "ExampleVoice")
+# The deny-list entries are spelled via concatenation so the literal tokens
+# never appear in this file; that lets a history-wide text rewrite of the
+# repository sanitise every historical copy without also rewriting this guard.
+CELEBRITY_TOKENS = ("\u9648\u5955\u8fc5", "\u9673\u5955\u8fc5", "ea" + "son", "Ea" + "son")
 
 # Documented stand-ins such as ``C:/path/to/your-authorized-track.mp3`` are
 # portable by construction and must not be reported as machine-specific.
@@ -283,7 +286,16 @@ def test_readme_does_not_advertise_removed_assets() -> None:
 
 # User-facing documentation shipped to readers of the public repository.
 PUBLIC_DOC_GLOBS = ("README.md", "CHANGELOG.md", "ROADMAP.md", "CONTRIBUTING.md", "SECURITY.md")
-PRIVATE_VOICE_TOKENS = ("示例歌手", "示例歌手", "example_voice", "ExampleVoice", "example_voice_b", "ExampleVoiceB", "示例歌手", "示例歌手")
+PRIVATE_VOICE_TOKENS = (
+    "\u9648\u5955\u8fc5",
+    "\u9673\u5955\u8fc5",
+    "ea" + "son",
+    "Ea" + "son",
+    "c" + "os",
+    "C" + "os",
+    "\u6c64\u4ee4\u5c71",
+    "\u6c88\u4ee5\u8bda",
+)
 
 
 def public_doc_files() -> list[str]:

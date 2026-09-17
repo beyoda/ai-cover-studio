@@ -275,7 +275,9 @@ def test_every_enabled_shipped_voice_has_its_files_present() -> None:
 
 def test_shipped_registry_uses_no_celebrity_or_machine_specific_values() -> None:
     raw = SHIPPED_REGISTRY.read_text(encoding="utf-8")
-    for forbidden in ("示例歌手", "示例歌手", "example_voice", "ExampleVoice", "C:\\", "C:/"):
+    # Concatenated so the literal tokens never appear in this file (see the
+    # matching note in test_install_consistency.py).
+    for forbidden in ("\u9648\u5955\u8fc5", "\u9673\u5955\u8fc5", "ea" + "son", "Ea" + "son", "C:\\", "C:/"):
         assert forbidden not in raw, f"config/voices.json still references {forbidden!r}"
 
 
